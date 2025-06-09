@@ -19,6 +19,12 @@ public class PlayerInputHandler : MonoBehaviour
             Input.GetAxisRaw("Vertical")
         ).normalized;
 
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            animator.TriggerJump();
+        }
+
+
         movement.SetInput(input);
         animator.UpdateAnimation(input);
     }

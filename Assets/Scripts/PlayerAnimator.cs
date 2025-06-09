@@ -30,6 +30,13 @@ public class PlayerAnimator : MonoBehaviour
             lastDirection = direction;
     }
 
+    public void TriggerJump()
+    {
+        bodyAnimator.SetTrigger("Jump");
+        armsAnimator.SetTrigger("Jump");
+    }
+
+
 
     private void UpdateSortingOrder(int direction)
     {
