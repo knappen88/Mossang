@@ -131,7 +131,7 @@ TextureImporter:
         width: 21
         height: 20
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -152,7 +152,7 @@ TextureImporter:
         width: 42
         height: 48
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -160,6 +160,48 @@ TextureImporter:
       bones: []
       spriteID: 65a2da85a7ad7dc479e807c3364d989e
       internalID: 1695398276
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_Frames_2
+      rect:
+        serializedVersion: 2
+        x: 246
+        y: 135
+        width: 35
+        height: 34
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3afae999723dc854b9c3080cd7b26c88
+      internalID: -579338430
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_Frames_3
+      rect:
+        serializedVersion: 2
+        x: 11
+        y: 137
+        width: 26
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 346a9c0bd0f432648a6396a7a5ea53fa
+      internalID: 2053266072
       vertices: []
       indices: 
       edges: []
@@ -177,6 +219,8 @@ TextureImporter:
     nameFileIdTable:
       UI_Frames_0: -1044506325
       UI_Frames_1: 1695398276
+      UI_Frames_2: -579338430
+      UI_Frames_3: 2053266072
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
