@@ -10,6 +10,13 @@ public class PlayerHealth : MonoBehaviour
     public UnityEvent<int, Vector2> OnDamageTaken; // (damage, sourcePosition)
     public UnityEvent OnPlayerDied;
 
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.H))
+            TakeDamage(10, transform.position + Vector3.left); // Урон слева для теста
+    }
+
     private void Awake()
     {
         CurrentHealth = maxHealth;
