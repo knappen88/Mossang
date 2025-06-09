@@ -10,12 +10,21 @@ public class PlayerAnimator : MonoBehaviour
     [SerializeField] private SpriteRenderer armsRenderer;
 
     private int lastDirection = 0;
+    private bool isDirectionFrozen = false;
+
+    public void FreezeDirection() => isDirectionFrozen = true;
+    public void UnfreezeDirection() => isDirectionFrozen = false;
+    public bool IsDirectionFrozen => isDirectionFrozen;
 
 
     public void UpdateAnimation(Vector2 movementInput)
     {
         bool isWalking = movementInput.magnitude > 0.1f;
-        int direction = isWalking ? GetDirection(movementInput) : lastDirection;
+
+        int direction = lastDirection;
+
+        if (!isDirectionFrozen && isWalking)
+            direction = GetDirection(movementInput);
 
         bodyAnimator.SetBool("isWalking", isWalking);
         bodyAnimator.SetInteger("Direction", direction);
@@ -26,15 +35,31 @@ public class PlayerAnimator : MonoBehaviour
         HandleFlip(movementInput);
         UpdateSortingOrder(direction);
 
-        if (isWalking)
+        if (!isDirectionFrozen && isWalking)
             lastDirection = direction;
     }
 
+
     public void TriggerJump()
     {
-        bodyAnimator.SetTrigger("Jump");
-        armsAnimator.SetTrigger("Jump");
+        Debug.Log("TriggerJump() called");
+
+        if (bodyAnimator == null)
+        {
+
+            Debug.LogError("Body Animator is NULL!");
+        }
+        else { bodyAnimator.SetTrigger("Jump");
+            Debug.Log("JumpBody");
+        }
+
+
+        if (armsAnimator == null) Debug.LogError("Arms Animator is NULL!");
+        else { armsAnimator.SetTrigger("Jump");
+            Debug.Log("JumpArms");
+        }
     }
+
 
 
 
