@@ -35,11 +35,21 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    // Перегрузка для обратной совместимости
+    
     public void TakeDamage(int amount)
     {
-        TakeDamage(amount, transform.position);
+        if (CurrentHealth <= 0) return;
+
+        CurrentHealth = Mathf.Max(CurrentHealth - amount, 0);
+        OnHealthChanged?.Invoke(CurrentHealth, maxHealth);
+
+        if (CurrentHealth == 0)
+        {
+            Debug.Log("Player died");
+            OnPlayerDied?.Invoke();
+        }
     }
+
 
     public void Heal(int amount)
     {

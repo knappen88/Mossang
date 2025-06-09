@@ -822,6 +822,7 @@ GameObject:
   - component: {fileID: 1698568418}
   - component: {fileID: 1698568419}
   - component: {fileID: 1698568420}
+  - component: {fileID: 1698568421}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -1044,6 +1045,23 @@ MonoBehaviour:
   bloodParticles: {fileID: 0}
   audioSource: {fileID: 0}
   hurtSounds: []
+--- !u!114 &1698568421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1698568411}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fe198ea038ecb344a86f08a1573092f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  visualRoot: {fileID: 1811310406}
+  scriptsToDisable:
+  - {fileID: 1698568420}
+  - {fileID: 1698568417}
+  - {fileID: 1698568416}
 --- !u!1 &1764319922
 GameObject:
   m_ObjectHideFlags: 0

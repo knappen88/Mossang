@@ -39,6 +39,16 @@ public class PlayerAnimator : MonoBehaviour
             lastDirection = direction;
     }
 
+    public void TriggerDeath()
+    {
+        Debug.Log("TriggerDeath() called");
+
+        if (bodyAnimator != null)
+            bodyAnimator.SetTrigger("Die");
+
+        if (armsAnimator != null)
+            armsAnimator.SetTrigger("Die");
+    }
 
     public void TriggerJump()
     {
