@@ -1,3 +1,5 @@
+using UnityEngine;
+
 [System.Serializable]
 public class InventoryItem
 {
@@ -8,5 +10,10 @@ public class InventoryItem
     {
         itemData = data;
         quantity = amount;
+    }
+
+    public void Use(GameObject user)
+    {
+        itemData.Use(user);
     }
 }
