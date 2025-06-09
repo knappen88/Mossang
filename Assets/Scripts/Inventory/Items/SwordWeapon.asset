@@ -9,10 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 808785a8db81ec44d8128c651def6eb5, type: 3}
-  m_Name: TestItem
+  m_Script: {fileID: 11500000, guid: 780b9b30b90c1ad439835645dee56949, type: 3}
+  m_Name: SwordWeapon
   m_EditorClassIdentifier: 
-  itemName: TestItem
-  icon: {fileID: -382412429, guid: dff46a4e7c6819d47bff5cc39bccaed6, type: 3}
-  isStackable: 1
-  maxStack: 99
+  itemName: Sword
+  icon: {fileID: 358875734, guid: a0e99003f4748d94cafc10b3109b2644, type: 3}
+  isStackable: 0
+  maxStack: 1
+  damage: 5
+  attackSpeed: 15
+  attackAnimation: {fileID: 0}

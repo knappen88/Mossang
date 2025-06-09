@@ -7,6 +7,9 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private GameObject slotPrefab;
     [SerializeField] private Transform contentRoot;
     [SerializeField] private int slotCount = 42;
+    [SerializeField] private List<HotbarSlotUI> hotbarSlots;
+    [SerializeField] private HotbarManager hotbarManager;
+
 
     private List<InventorySlotUI> slots = new();
     private InventorySlotUI selectedSlot;
@@ -67,4 +70,19 @@ public class InventoryUI : MonoBehaviour
         var item = selectedSlot.GetItem();
         Debug.Log("Выбран слот с предметом: " + item?.itemData?.itemName);
     }
+
+    public void TryMoveToHotbar(InventorySlotUI slot)
+    {
+        var item = slot.GetItem();
+        if (item == null) return;
+
+        bool added = hotbarManager.TryAddToHotbar(item);
+
+        if (!added)
+        {
+            Debug.Log("Нет свободного слота в хотбаре");
+        }
+    }
+
+
 }
