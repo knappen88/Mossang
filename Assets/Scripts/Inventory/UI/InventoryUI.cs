@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public class InventoryUI : MonoBehaviour
 {
@@ -10,9 +11,10 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private List<HotbarSlotUI> hotbarSlots;
     [SerializeField] private HotbarManager hotbarManager;
 
-
     private List<InventorySlotUI> slots = new();
     private InventorySlotUI selectedSlot;
+
+    public Inventory PlayerInventory => playerInventory;
 
     private void Awake()
     {
@@ -22,7 +24,7 @@ public class InventoryUI : MonoBehaviour
             GameObject slotGO = Instantiate(slotPrefab, contentRoot);
             InventorySlotUI slot = slotGO.GetComponent<InventorySlotUI>();
 
-            slot.Init(this); // передаём ссылку на этот UI
+            slot.Init(this);
             slots.Add(slot);
         }
     }
@@ -52,11 +54,30 @@ public class InventoryUI : MonoBehaviour
                 slots[i].ClearSlot();
             }
 
-            // При обновлении UI — сброс выделения
             slots[i].SetSelected(false);
         }
 
         selectedSlot = null;
+    }
+
+    // Новый метод для обновления инвентаря из слотов UI
+    public void UpdateInventoryFromSlots()
+    {
+        // Собираем все непустые предметы из слотов
+        var newItems = new List<InventoryItem>();
+
+        foreach (var slot in slots)
+        {
+            var item = slot.GetItem();
+            if (item != null && item.itemData != null)
+            {
+                newItems.Add(item);
+            }
+        }
+
+        // Обновляем инвентарь
+        playerInventory.items = newItems;
+        playerInventory.OnInventoryChanged.Invoke();
     }
 
     public void SelectSlot(InventorySlotUI slot)
@@ -65,10 +86,13 @@ public class InventoryUI : MonoBehaviour
             selectedSlot.SetSelected(false);
 
         selectedSlot = slot;
-        selectedSlot.SetSelected(true);
 
-        var item = selectedSlot.GetItem();
-        Debug.Log("Выбран слот с предметом: " + item?.itemData?.itemName);
+        if (selectedSlot != null)
+        {
+            selectedSlot.SetSelected(true);
+            var item = selectedSlot.GetItem();
+            Debug.Log("Выбран слот с предметом: " + item?.itemData?.itemName);
+        }
     }
 
     public void TryMoveToHotbar(InventorySlotUI slot)
@@ -78,11 +102,29 @@ public class InventoryUI : MonoBehaviour
 
         bool added = hotbarManager.TryAddToHotbar(item);
 
-        if (!added)
+        if (added)
+        {
+            playerInventory.RemoveItem(item.itemData, item.quantity);
+            RedrawUI();
+        }
+        else
         {
             Debug.Log("Нет свободного слота в хотбаре");
         }
     }
 
+    public void ForceRedraw()
+    {
+        // Принудительное обновление всех слотов
+        StartCoroutine(ForceRedrawCoroutine());
+    }
 
+    private System.Collections.IEnumerator ForceRedrawCoroutine()
+    {
+        // Ждем конец кадра
+        yield return new WaitForEndOfFrame();
+
+        // Перерисовываем UI
+        RedrawUI();
+    }
 }

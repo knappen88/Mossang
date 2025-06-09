@@ -14,6 +14,12 @@ public class InventoryItem
 
     public void Use(GameObject user)
     {
-        itemData.Use(user);
+        if (itemData != null)
+            itemData.Use(user);
+    }
+
+    public InventoryItem Clone()
+    {
+        return new InventoryItem(itemData, quantity);
     }
 }

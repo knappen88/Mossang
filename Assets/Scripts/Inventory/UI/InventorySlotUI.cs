@@ -28,18 +28,20 @@ public class InventorySlotUI : MonoBehaviour,
     {
         linkedItem = item;
 
-        if (item != null && item.itemData != null)
+        if (linkedItem != null && linkedItem.itemData != null)
         {
-            itemIconImage.sprite = item.itemData.icon;
+            itemIconImage.sprite = linkedItem.itemData.icon;
             itemIconImage.enabled = true;
 
-            quantityText.text = item.itemData.isStackable && item.quantity > 1
-                ? item.quantity.ToString()
+            quantityText.text = linkedItem.itemData.isStackable && linkedItem.quantity > 1
+                ? linkedItem.quantity.ToString()
                 : "";
         }
         else
         {
-            ClearSlot();
+            itemIconImage.sprite = null;
+            itemIconImage.enabled = false;
+            quantityText.text = "";
         }
     }
 
@@ -72,7 +74,8 @@ public class InventorySlotUI : MonoBehaviour,
     }
 
     public InventoryItem GetItem() => linkedItem;
-    public void SetItemDirectly(InventoryItem item) => linkedItem = item;
+    public static InventorySlotUI GetDraggingSlot() => draggingSlot;
+    public InventoryUI GetInventoryUI() => inventoryUI;
 
     // DRAG & DROP ======================================
 
@@ -81,31 +84,77 @@ public class InventorySlotUI : MonoBehaviour,
         if (linkedItem == null) return;
 
         draggingSlot = this;
-        // TODO: DragIcon визуально (можем добавить позже)
+        DragDropManager.StartDrag(linkedItem, this);
+
+        // Визуальный эффект
+        if (itemIconImage != null)
+        {
+            Color c = itemIconImage.color;
+            c.a = 0.5f;
+            itemIconImage.color = c;
+        }
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        // Пока ничего — только иконку можно двигать (если будет визуал)
+        // Можно добавить визуальное перетаскивание
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
         draggingSlot = null;
-    }
-    public static InventorySlotUI GetDraggingSlot()
-    {
-        return draggingSlot;
-    }
+        DragDropManager.EndDrag();
 
+        // Возвращаем непрозрачность
+        if (itemIconImage != null)
+        {
+            Color c = itemIconImage.color;
+            c.a = 1f;
+            itemIconImage.color = c;
+        }
+    }
 
     public void OnDrop(PointerEventData eventData)
     {
-        if (draggingSlot == null || draggingSlot == this) return;
+        var draggedItem = DragDropManager.GetDraggedItem();
+        if (draggedItem == null) return;
 
-        // Поменять местами предметы
-        var temp = linkedItem;
-        SetItem(draggingSlot.GetItem());
-        draggingSlot.SetItem(temp);
+        // Проверяем источник перетаскивания
+        var fromInventorySlot = DragDropManager.GetDragSource<InventorySlotUI>();
+        var fromHotbarSlot = DragDropManager.GetDragSource<HotbarSlotUI>();
+
+        // 1. Из другого слота инвентаря
+        if (fromInventorySlot != null && fromInventorySlot != this)
+        {
+            var tempItem = linkedItem;
+            SetItem(draggedItem);
+            fromInventorySlot.SetItem(tempItem);
+            inventoryUI.UpdateInventoryFromSlots();
+            return;
+        }
+
+        // 2. Из хотбара
+        if (fromHotbarSlot != null)
+        {
+            Debug.Log($"[OnDrop] Из хотбара: {draggedItem.itemData.itemName} x{draggedItem.quantity}");
+
+            if (linkedItem == null)
+            {
+                // Добавляем в инвентарь
+                inventoryUI.PlayerInventory.AddItem(draggedItem);
+                // Очищаем хотбар
+                fromHotbarSlot.ClearSlot();
+            }
+            else
+            {
+                // Меняем местами
+                var tempItem = new InventoryItem(linkedItem.itemData, linkedItem.quantity);
+
+                inventoryUI.PlayerInventory.RemoveItem(linkedItem.itemData, linkedItem.quantity);
+                inventoryUI.PlayerInventory.AddItem(draggedItem);
+
+                fromHotbarSlot.SetItem(tempItem);
+            }
+        }
     }
 }

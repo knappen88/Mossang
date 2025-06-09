@@ -29,13 +29,14 @@ public class HotbarManager : MonoBehaviour
         {
             if (slot.GetItem() == null)
             {
-                slot.SetItem(item);
+                slot.SetItem(item.Clone());
                 return true;
             }
         }
 
         return false;
     }
+
 
     private void Update()
     {

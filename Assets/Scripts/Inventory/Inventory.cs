@@ -9,10 +9,11 @@ public class Inventory : MonoBehaviour
     public UnityEvent OnInventoryChanged;
     public int maxSlots = 36;
 
-
     public void AddItem(ItemData itemData, int quantity)
     {
         if (itemData == null || quantity <= 0) return;
+
+        Debug.Log($"[Inventory] AddItem: {itemData.itemName} x{quantity}");
 
         if (itemData.isStackable)
         {
@@ -48,21 +49,42 @@ public class Inventory : MonoBehaviour
             quantity -= toAdd;
         }
 
+        Debug.Log($"[Inventory] После добавления: {items.Count} предметов");
         OnInventoryChanged.Invoke();
     }
 
-
-
-    public void RemoveItem(ItemData item, int amount = 1)
+    public void AddItem(InventoryItem newItem)
     {
-        var existing = items.Find(i => i.itemData == item);
-        if (existing != null)
+        if (newItem == null || newItem.itemData == null || newItem.quantity <= 0)
         {
-            existing.quantity -= amount;
-            if (existing.quantity <= 0)
-                items.Remove(existing);
-
-            OnInventoryChanged?.Invoke();
+            Debug.LogWarning("[Inventory] Попытка добавить null или пустой предмет");
+            return;
         }
+
+        AddItem(newItem.itemData, newItem.quantity);
+    }
+
+    public bool RemoveItem(ItemData itemData, int amount = 1)
+    {
+        Debug.Log($"[Inventory] RemoveItem: {itemData.itemName} x{amount}");
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            if (items[i].itemData == itemData)
+            {
+                items[i].quantity -= amount;
+
+                if (items[i].quantity <= 0)
+                {
+                    items.RemoveAt(i);
+                }
+
+                Debug.Log($"[Inventory] После удаления: {items.Count} предметов");
+                OnInventoryChanged?.Invoke();
+                return true;
+            }
+        }
+
+        return false;
     }
 }

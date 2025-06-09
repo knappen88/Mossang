@@ -3,16 +3,22 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.EventSystems;
 
-public class HotbarSlotUI : MonoBehaviour, IDropHandler
+public class HotbarSlotUI : MonoBehaviour,
+    IDropHandler, IBeginDragHandler, IEndDragHandler, IDragHandler
 {
-    [SerializeField] private Image iconImage;               // Иконка предмета
-    [SerializeField] private Image selectionOutline;        // Рамка выделения
-    [SerializeField] private TextMeshProUGUI keyText;       // Номер клавиши
+    [SerializeField] private Image iconImage;
+    [SerializeField] private Image selectionOutline;
+    [SerializeField] private TextMeshProUGUI keyText;
 
-    private int slotIndex;
     private InventoryItem currentItem;
+    private int slotIndex;
 
-    public void SetSlotIndex(int index) => slotIndex = index;
+    private static HotbarSlotUI draggingSlot;
+
+    public void SetSlotIndex(int index)
+    {
+        slotIndex = index;
+    }
 
     public void SetKeyNumber(string key)
     {
@@ -31,6 +37,7 @@ public class HotbarSlotUI : MonoBehaviour, IDropHandler
         }
         else
         {
+            currentItem = null;
             iconImage.sprite = null;
             iconImage.enabled = false;
         }
@@ -38,22 +45,95 @@ public class HotbarSlotUI : MonoBehaviour, IDropHandler
 
     public InventoryItem GetItem() => currentItem;
 
+    public void ClearSlot()
+    {
+        SetItem(null);
+    }
+
+    public void SetSelected(bool selected)
+    {
+        if (selectionOutline != null)
+            selectionOutline.enabled = selected;
+    }
+
     public void UseItem(GameObject user)
     {
         currentItem?.Use(user);
     }
 
-    public void OnDrop(PointerEventData eventData)
-    {
-        var dragged = InventorySlotUI.GetDraggingSlot();
-        if (dragged == null) return;
+    public static HotbarSlotUI GetDraggingSlot() => draggingSlot;
 
-        SetItem(dragged.GetItem());
+    // === DRAG & DROP ===
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        if (currentItem == null) return;
+
+        draggingSlot = this;
+        DragDropManager.StartDrag(currentItem, this);
+
+        // Визуальный эффект
+        if (iconImage != null)
+        {
+            Color c = iconImage.color;
+            c.a = 0.5f;
+            iconImage.color = c;
+        }
     }
 
-    public void SetSelected(bool isSelected)
+    public void OnDrag(PointerEventData eventData)
     {
-        if (selectionOutline != null)
-            selectionOutline.enabled = isSelected;
+        // Визуальное перетаскивание
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        draggingSlot = null;
+        DragDropManager.EndDrag();
+
+        // Возвращаем непрозрачность
+        if (iconImage != null)
+        {
+            Color c = iconImage.color;
+            c.a = 1f;
+            iconImage.color = c;
+        }
+    }
+
+    public void OnDrop(PointerEventData eventData)
+    {
+        var draggedItem = DragDropManager.GetDraggedItem();
+        if (draggedItem == null) return;
+
+        var fromInventorySlot = DragDropManager.GetDragSource<InventorySlotUI>();
+        var fromHotbarSlot = DragDropManager.GetDragSource<HotbarSlotUI>();
+
+        // 1. Из инвентаря
+        if (fromInventorySlot != null)
+        {
+            var inventoryUI = fromInventorySlot.GetInventoryUI();
+
+            if (currentItem == null)
+            {
+                SetItem(draggedItem);
+                inventoryUI.PlayerInventory.RemoveItem(draggedItem.itemData, draggedItem.quantity);
+            }
+            else
+            {
+                var tempItem = new InventoryItem(currentItem.itemData, currentItem.quantity);
+                SetItem(draggedItem);
+                inventoryUI.PlayerInventory.RemoveItem(draggedItem.itemData, draggedItem.quantity);
+                inventoryUI.PlayerInventory.AddItem(tempItem);
+            }
+            return;
+        }
+
+        // 2. Из другого слота хотбара
+        if (fromHotbarSlot != null && fromHotbarSlot != this)
+        {
+            var temp = currentItem;
+            SetItem(draggedItem);
+            fromHotbarSlot.SetItem(temp);
+        }
     }
 }
