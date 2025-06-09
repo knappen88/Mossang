@@ -9,6 +9,7 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private int slotCount = 42;
 
     private List<InventorySlotUI> slots = new();
+    private InventorySlotUI selectedSlot;
 
     private void Awake()
     {
@@ -17,6 +18,8 @@ public class InventoryUI : MonoBehaviour
         {
             GameObject slotGO = Instantiate(slotPrefab, contentRoot);
             InventorySlotUI slot = slotGO.GetComponent<InventorySlotUI>();
+
+            slot.Init(this); // передаём ссылку на этот UI
             slots.Add(slot);
         }
     }
@@ -39,12 +42,29 @@ public class InventoryUI : MonoBehaviour
             if (i < playerInventory.items.Count)
             {
                 var item = playerInventory.items[i];
-                slots[i].SetItem(item.itemData, item.quantity);
+                slots[i].SetItem(item);
             }
             else
             {
                 slots[i].ClearSlot();
             }
+
+            // При обновлении UI — сброс выделения
+            slots[i].SetSelected(false);
         }
+
+        selectedSlot = null;
+    }
+
+    public void SelectSlot(InventorySlotUI slot)
+    {
+        if (selectedSlot != null)
+            selectedSlot.SetSelected(false);
+
+        selectedSlot = slot;
+        selectedSlot.SetSelected(true);
+
+        var item = selectedSlot.GetItem();
+        Debug.Log("Выбран слот с предметом: " + item?.itemData?.itemName);
     }
 }
