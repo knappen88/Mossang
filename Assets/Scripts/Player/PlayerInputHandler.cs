@@ -16,6 +16,7 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void Update()
     {
+        
         Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;
 
         movement.SetInput(input);
