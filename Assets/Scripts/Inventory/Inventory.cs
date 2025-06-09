@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -7,29 +7,51 @@ public class Inventory : MonoBehaviour
     public List<InventoryItem> items = new();
 
     public UnityEvent OnInventoryChanged;
+    public int maxSlots = 36;
 
-    public void AddItem(ItemData item, int amount = 1)
+
+    public void AddItem(ItemData itemData, int quantity)
     {
-        if (item.isStackable)
+        if (itemData == null || quantity <= 0) return;
+
+        if (itemData.isStackable)
         {
-            var existing = items.Find(i => i.itemData == item);
-            if (existing != null)
+            foreach (var item in items)
             {
-                existing.quantity = Mathf.Min(existing.quantity + amount, item.maxStack);
+                if (item.itemData == itemData && item.quantity < itemData.maxStack)
+                {
+                    int space = itemData.maxStack - item.quantity;
+                    int toAdd = Mathf.Min(space, quantity);
+                    item.quantity += toAdd;
+                    quantity -= toAdd;
+
+                    if (quantity <= 0)
+                    {
+                        OnInventoryChanged.Invoke();
+                        return;
+                    }
+                }
             }
-            else
-            {
-                items.Add(new InventoryItem(item, amount));
-            }
-        }
-        else
-        {
-            for (int i = 0; i < amount; i++)
-                items.Add(new InventoryItem(item, 1));
         }
 
-        OnInventoryChanged?.Invoke();
+        while (quantity > 0)
+        {
+            if (items.Count >= maxSlots)
+            {
+                Debug.Log("Инвентарь переполнен, не удалось добавить остаток");
+                break;
+            }
+
+            int toAdd = itemData.isStackable ? Mathf.Min(itemData.maxStack, quantity) : 1;
+
+            items.Add(new InventoryItem(itemData, toAdd));
+            quantity -= toAdd;
+        }
+
+        OnInventoryChanged.Invoke();
     }
+
+
 
     public void RemoveItem(ItemData item, int amount = 1)
     {
