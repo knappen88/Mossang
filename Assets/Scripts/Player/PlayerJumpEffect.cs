@@ -30,7 +30,7 @@ public class PlayerJumpEffect : MonoBehaviour
         movement = GetComponent<PlayerMovement>();
         animator = GetComponent<PlayerAnimator>();
 
-        // Создаем тень
+        
         if (shadowPrefab != null)
         {
             shadow = Instantiate(shadowPrefab, transform.position, Quaternion.identity);
