@@ -1,17 +1,42 @@
 ﻿using UnityEngine;
+using Combat.Data;
 
 [CreateAssetMenu(menuName = "Items/Weapon")]
 public class WeaponData : ItemData
 {
     public override ItemType ItemType => ItemType.Weapon;
 
+    [Header("Combat Stats")]
     public float damage;
     public float attackSpeed;
-    public AnimationClip attackAnimation;
+    public float attackRange = 1.5f;
+    public float knockbackForce = 2f;
+
+    [Header("Weapon Visuals")]
+    public GameObject weaponPrefab; // 3D модель оружия
+    public WeaponAnimationSet animationSet; // Набор анимаций
+
+    [Header("Combat Settings")]
+    public LayerMask targetLayers = -1; // На какие слои действует оружие
+    public bool canBlock = false;
+    public float blockDamageReduction = 0.5f;
+
+    [Header("Audio")]
+    public AudioClip[] swingSounds;
+    public AudioClip[] hitSounds;
 
     public override void Use(GameObject user)
     {
-        Debug.Log($"Атака оружием {itemName}. Урон: {damage}");
-        // Запуск анимации и логики атаки через контроллер игрока
+        // Проверяем наличие WeaponEquipmentController
+        var equipmentController = user.GetComponent<Combat.Equipment.WeaponEquipmentController>();
+        if (equipmentController != null)
+        {
+            equipmentController.EquipWeapon(this);
+            Debug.Log($"Экипировано оружие: {itemName}");
+        }
+        else
+        {
+            Debug.LogWarning($"WeaponEquipmentController не найден на {user.name}");
+        }
     }
 }

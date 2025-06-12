@@ -59,13 +59,17 @@ public class PlayerAnimator : MonoBehaviour
 
             Debug.LogError("Body Animator is NULL!");
         }
-        else { bodyAnimator.SetTrigger("Jump");
+        else
+        {
+            bodyAnimator.SetTrigger("Jump");
             Debug.Log("JumpBody");
         }
 
 
         if (armsAnimator == null) Debug.LogError("Arms Animator is NULL!");
-        else { armsAnimator.SetTrigger("Jump");
+        else
+        {
+            armsAnimator.SetTrigger("Jump");
             Debug.Log("JumpArms");
         }
     }
@@ -111,4 +115,19 @@ public class PlayerAnimator : MonoBehaviour
             armsRenderer.flipX = flip;
         }
     }
+
+    public void TriggerAttack()
+    {
+        if (bodyAnimator != null)
+            bodyAnimator.SetTrigger("Attack");
+
+        if (armsAnimator != null)
+            armsAnimator.SetTrigger("Attack");
+    }
+
+    public int GetCurrentDirection()
+    {
+        return lastDirection;
+    }
+
 }
