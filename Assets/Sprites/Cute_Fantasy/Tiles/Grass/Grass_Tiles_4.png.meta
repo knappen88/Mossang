@@ -228,7 +228,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: grass23
+      name: grass3
       rect:
         serializedVersion: 2
         x: 80
@@ -333,7 +333,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: grass233
+      name: grass4
       rect:
         serializedVersion: 2
         x: 48
@@ -354,7 +354,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: grass2333
+      name: grass6
       rect:
         serializedVersion: 2
         x: 80
@@ -480,7 +480,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: grass26
+      name: grass7
       rect:
         serializedVersion: 2
         x: 48
@@ -501,7 +501,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: grass27
+      name: grass8
       rect:
         serializedVersion: 2
         x: 64
@@ -522,7 +522,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: grass256
+      name: grass9
       rect:
         serializedVersion: 2
         x: 80
@@ -1623,12 +1623,12 @@ TextureImporter:
       Grass_Tiles_4_9: 680775892
       grass1: 1439463222
       grass2: -1554354518
-      grass23: 1438592750
-      grass233: -1232247288
-      grass2333: -360881722
-      grass256: 1975115959
-      grass26: 36459648
-      grass27: 1585166256
+      grass3: 1438592750
+      grass4: -1232247288
+      grass6: -360881722
+      grass7: 36459648
+      grass8: 1585166256
+      grass9: 1975115959
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
