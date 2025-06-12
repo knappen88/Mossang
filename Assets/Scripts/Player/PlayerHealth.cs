@@ -13,7 +13,7 @@ public class PlayerHealth : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.H))
+        if (Input.GetKeyDown(KeyCode.P))
             TakeDamage(10, transform.position + Vector3.left); // Урон слева для теста
     }
 
