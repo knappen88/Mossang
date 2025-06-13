@@ -18,6 +18,18 @@ public class PlayerJumpEffect : MonoBehaviour
     [SerializeField] private float squashAmount = 0.85f;
     [SerializeField] private float stretchAmount = 1.2f;
 
+    [Header("Jump Sound")]
+    [SerializeField] private AudioClip jumpSound;
+    [SerializeField] private AudioClip landingSound;
+    [SerializeField] private float jumpSoundVolume = 0.8f;
+    [SerializeField] private float landingSoundVolume = 0.6f;
+    [Range(0.8f, 1.2f)]
+    [SerializeField] private float jumpPitchMin = 0.95f;
+    [Range(0.8f, 1.2f)]
+    [SerializeField] private float jumpPitchMax = 1.05f;
+
+    private AudioSource audioSource;
+
     private PlayerMovement movement;
     private PlayerAnimator animator;
     private GameObject shadow;
@@ -30,7 +42,16 @@ public class PlayerJumpEffect : MonoBehaviour
         movement = GetComponent<PlayerMovement>();
         animator = GetComponent<PlayerAnimator>();
 
-        
+        // Получаем или создаем AudioSource
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.spatialBlend = 0f; // 2D звук
+        }
+
+
         if (shadowPrefab != null)
         {
             shadow = Instantiate(shadowPrefab, transform.position, Quaternion.identity);
@@ -53,6 +74,9 @@ public class PlayerJumpEffect : MonoBehaviour
         if (isJumping) return;
 
         isJumping = true;
+
+        // Проигрываем звук прыжка
+        PlayJumpSound();
 
         // Блокируем движение
         movement.DisableMovement();
@@ -126,7 +150,8 @@ public class PlayerJumpEffect : MonoBehaviour
             animator.UnfreezeDirection();
             movement.EnableMovement();
 
-            
+            PlayLandingSound();
+
             if (shadow != null)
             {
                 shadow.transform.localScale = originalShadowScale;
@@ -135,6 +160,25 @@ public class PlayerJumpEffect : MonoBehaviour
     }
 
     public bool IsJumping => isJumping;
+
+    
+    private void PlayJumpSound()
+    {
+        if (jumpSound != null && audioSource != null)
+        {
+            audioSource.pitch = Random.Range(jumpPitchMin, jumpPitchMax);
+            audioSource.PlayOneShot(jumpSound, jumpSoundVolume);
+        }
+    }
+
+    private void PlayLandingSound()
+    {
+        if (landingSound != null && audioSource != null)
+        {
+            audioSource.pitch = Random.Range(jumpPitchMin, jumpPitchMax);
+            audioSource.PlayOneShot(landingSound, landingSoundVolume);
+        }
+    }
 
     private void OnDestroy()
     {
