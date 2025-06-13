@@ -27,16 +27,15 @@ public class WeaponData : ItemData
 
     public override void Use(GameObject user)
     {
-        // Проверяем наличие WeaponEquipmentController
-        var equipmentController = user.GetComponent<Combat.Equipment.WeaponEquipmentController>();
+        // Ищем EquipmentController на игроке
+        var equipmentController = user.GetComponent<Player.Equipment.EquipmentController>();
         if (equipmentController != null)
         {
-            equipmentController.EquipWeapon(this);
-            Debug.Log($"Экипировано оружие: {itemName}");
+            equipmentController.EquipItem(this);
         }
         else
         {
-            Debug.LogWarning($"WeaponEquipmentController не найден на {user.name}");
+            Debug.LogWarning($"EquipmentController not found on {user.name}");
         }
     }
 }

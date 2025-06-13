@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3615b88e9299c0145b13736fdc2f832d, type: 3}
+  m_Name: AxeAnimSet
+  m_EditorClassIdentifier: 
+  bodyAttackFront: {fileID: 7400000, guid: c2b73e4eca6206942871bc7ba39da8eb, type: 2}
+  bodyAttackSide: {fileID: 7400000, guid: bee820733af12f3478d6b9a5a0b3ed99, type: 2}
+  bodyAttackBack: {fileID: 7400000, guid: 9024bc2f36f73004cbc093520b4d2e63, type: 2}
+  armsAttackFront: {fileID: 7400000, guid: 61d098d468b24834fb5f8693c6f3cf7c, type: 2}
+  armsAttackSide: {fileID: 7400000, guid: 4ab1a5cf2402e7748a0d6f66e49711ff, type: 2}
+  armsAttackBack: {fileID: 7400000, guid: 91d5dda2a2f250e468a0cd50998f9069, type: 2}
+  weaponAttackFront: {fileID: 7400000, guid: 81960bbc61c281b41aa47cde84f5804b, type: 2}
+  weaponAttackSide: {fileID: 7400000, guid: 0a471a37a9ea7f14ebfaee2ef79a189d, type: 2}
+  weaponAttackBack: {fileID: 7400000, guid: 18e457b5bbfdda345af9335c61962872, type: 2}
+  attackDuration: 0.5
+  attackHitTimeNormalized: 0.5

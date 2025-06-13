@@ -26,18 +26,17 @@ public class ToolData : ItemData
 
     public override void Use(GameObject user)
     {
-        // Инструменты тоже экипируются через тот же контроллер
-        var equipmentController = user.GetComponent<Combat.Equipment.WeaponEquipmentController>();
+        // Используем тот же EquipmentController что и для оружия
+        var equipmentController = user.GetComponent<Player.Equipment.EquipmentController>();
         if (equipmentController != null)
         {
-            // Временно конвертируем в WeaponData для совместимости
-            // В будущем можно сделать базовый класс EquippableData
-            var tempWeaponData = CreateWeaponDataFromTool();
-            equipmentController.EquipWeapon(tempWeaponData);
-            Debug.Log($"Экипирован инструмент: {itemName}");
+            equipmentController.EquipItem(this);
+        }
+        else
+        {
+            Debug.LogWarning($"EquipmentController not found on {user.name}");
         }
     }
-
     private WeaponData CreateWeaponDataFromTool()
     {
         // Создаем временный WeaponData для инструмента
