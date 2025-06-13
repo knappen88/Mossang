@@ -2,6 +2,7 @@
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.EventSystems;
+using DG.Tweening;
 
 public class InventorySlotUI : MonoBehaviour,
     IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
@@ -36,6 +37,9 @@ public class InventorySlotUI : MonoBehaviour,
             quantityText.text = linkedItem.itemData.isStackable && linkedItem.quantity > 1
                 ? linkedItem.quantity.ToString()
                 : "";
+
+            // Анимация появления предмета
+            AnimateItemAppear();
         }
         else
         {
@@ -43,6 +47,14 @@ public class InventorySlotUI : MonoBehaviour,
             itemIconImage.enabled = false;
             quantityText.text = "";
         }
+    }
+
+    private void AnimateItemAppear()
+    {
+        if (itemIconImage == null) return;
+
+        itemIconImage.transform.localScale = Vector3.zero;
+        itemIconImage.transform.DOScale(1f, 0.2f).SetEase(Ease.OutBack);
     }
 
     public void ClearSlot()
@@ -57,12 +69,24 @@ public class InventorySlotUI : MonoBehaviour,
     public void SetSelected(bool selected)
     {
         if (selectionHighlight != null)
+        {
             selectionHighlight.enabled = selected;
+
+            // Анимация выделения
+            if (selected)
+            {
+                selectionHighlight.transform.localScale = Vector3.one * 0.9f;
+                selectionHighlight.transform.DOScale(1f, 0.2f).SetEase(Ease.OutElastic);
+            }
+        }
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
         inventoryUI.SelectSlot(this);
+
+        // Визуальный эффект клика
+        transform.DOPunchScale(Vector3.one * 0.1f, 0.2f, 5);
 
         // Двойной клик — переместить в хотбар
         if (Time.time - lastClickTime < doubleClickThreshold)
@@ -92,32 +116,45 @@ public class InventorySlotUI : MonoBehaviour,
             Color c = itemIconImage.color;
             c.a = 0.5f;
             itemIconImage.color = c;
+
+            // Используем DragVisual
+            DragVisual.StartDrag(itemIconImage.sprite);
         }
+
+        // Уменьшаем слот
+        transform.DOScale(0.9f, 0.1f);
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        // Можно добавить визуальное перетаскивание
+        // DragVisual обрабатывает визуальное перетаскивание
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
         draggingSlot = null;
         DragDropManager.EndDrag();
+        DragVisual.EndDrag();
 
-        // Возвращаем непрозрачность
+        // Возвращаем визуальное состояние
         if (itemIconImage != null)
         {
             Color c = itemIconImage.color;
             c.a = 1f;
             itemIconImage.color = c;
         }
+
+        // Возвращаем размер
+        transform.DOScale(1f, 0.1f);
     }
 
     public void OnDrop(PointerEventData eventData)
     {
         var draggedItem = DragDropManager.GetDraggedItem();
         if (draggedItem == null) return;
+
+        // Анимация приема предмета
+        transform.DOPunchScale(Vector3.one * 0.15f, 0.3f, 5);
 
         // Проверяем источник перетаскивания
         var fromInventorySlot = DragDropManager.GetDragSource<InventorySlotUI>();

@@ -11,18 +11,68 @@ public class HotbarManager : MonoBehaviour
     private List<HotbarSlotUI> slots = new();
     private int activeSlotIndex = 0;
 
-    private void Start()
+    private void Awake()
     {
-        for (int i = 0; i < slotCount; i++)
+        Debug.Log($"[HotbarManager] Awake - GameObject '{gameObject.name}' активен: {gameObject.activeSelf}");
+        Debug.Log($"[HotbarManager] Родитель: {transform.parent?.name ?? "нет"}");
+
+        // Проверяем, что сам HotbarManager активен
+        if (!gameObject.activeInHierarchy)
         {
-            var slotGO = Instantiate(slotPrefab, slotParent);
-            var slotUI = slotGO.GetComponent<HotbarSlotUI>();
-            slotUI.SetSlotIndex(i);
-            slotUI.SetKeyNumber((i + 1).ToString());
-            slotUI.SetSelected(i == activeSlotIndex); // ← выделяем первый
-            slots.Add(slotUI);
+            Debug.LogError($"[HotbarManager] GameObject неактивен в иерархии!");
         }
     }
+
+    private void Start()
+    {
+        Debug.Log($"[HotbarManager] Start - Создаю {slotCount} слотов");
+
+        // Проверяем slotParent
+        if (slotParent == null)
+        {
+            Debug.LogError("[HotbarManager] slotParent не назначен!");
+            slotParent = transform;
+        }
+
+        // Создаем слоты
+        for (int i = 0; i < slotCount; i++)
+        {
+            if (slotPrefab == null)
+            {
+                Debug.LogError("[HotbarManager] slotPrefab не назначен!");
+                return;
+            }
+
+            var slotGO = Instantiate(slotPrefab, slotParent);
+            var slotUI = slotGO.GetComponent<HotbarSlotUI>();
+
+            if (slotUI == null)
+            {
+                Debug.LogError($"[HotbarManager] HotbarSlotUI не найден на префабе!");
+                continue;
+            }
+
+            slotUI.SetSlotIndex(i);
+            slotUI.SetKeyNumber((i + 1).ToString());
+            slotUI.SetSelected(i == activeSlotIndex);
+            slots.Add(slotUI);
+
+            Debug.Log($"[HotbarManager] Создан слот {i}");
+        }
+
+        Debug.Log($"[HotbarManager] Создано {slots.Count} слотов. Хотбар активен: {gameObject.activeInHierarchy}");
+    }
+
+    private void OnEnable()
+    {
+        Debug.Log($"[HotbarManager] OnEnable - хотбар включен");
+    }
+
+    private void OnDisable()
+    {
+        Debug.LogWarning($"[HotbarManager] OnDisable - хотбар ВЫКЛЮЧЕН!");
+    }
+
     public bool TryAddToHotbar(InventoryItem item)
     {
         foreach (var slot in slots)
@@ -36,7 +86,6 @@ public class HotbarManager : MonoBehaviour
 
         return false;
     }
-
 
     private void Update()
     {
