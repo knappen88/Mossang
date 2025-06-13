@@ -16,15 +16,14 @@ namespace Items
         [SerializeField] private int quantity = 1;
 
         [Header("Pickup Settings")]
-        [SerializeField] private float pickupRadius = 1f;
         [SerializeField] private bool autoPickup = false;
         [SerializeField] private float magnetSpeed = 5f;
         [SerializeField] private float magnetStartDistance = 2f;
 
         [Header("Hint Settings")]
-        [SerializeField] private float hintDelay = 2f; // Задержка перед показом подсказки
-        [SerializeField] private GameObject hintPrefab; // Префаб подсказки
-        [SerializeField] private Vector3 hintOffset = new Vector3(0, 1f, 0); // Смещение подсказки
+        [SerializeField] private float hintDelay = 2f;
+        [SerializeField] private GameObject hintPrefab;
+        [SerializeField] private Vector3 hintOffset = new Vector3(0, 1f, 0);
 
         [Header("Visual")]
         [SerializeField] private SpriteRenderer spriteRenderer;
@@ -32,6 +31,10 @@ namespace Items
         [SerializeField] private float bobSpeed = 2f;
         [SerializeField] private bool rotateItem = false;
         [SerializeField] private float rotateSpeed = 90f;
+
+        [Header("Highlight")]
+        [SerializeField] private Color highlightColor = new Color(1.2f, 1.2f, 1.2f, 1f);
+        [SerializeField] private float highlightScale = 1.1f;
 
         [Header("Sound")]
         [SerializeField] private AudioClip pickupSound;
@@ -50,8 +53,13 @@ namespace Items
         // Для подсказки
         private GameObject hintInstance;
         private float playerNearTimer = 0f;
-        private bool isPlayerNear = false;
+        private bool isHighlighted = false;
         private bool hintShown = false;
+        private Color originalColor;
+        private Vector3 originalScale;
+
+        public bool IsBeingPickedUp => isBeingPickedUp;
+        public bool AutoPickup => autoPickup;
 
         private void Awake()
         {
@@ -61,14 +69,19 @@ namespace Items
             if (spriteRenderer == null)
                 spriteRenderer = GetComponent<SpriteRenderer>();
 
-            if (spriteRenderer != null && itemData != null && itemData.icon != null)
+            if (spriteRenderer != null)
             {
-                spriteRenderer.sprite = itemData.icon;
+                originalColor = spriteRenderer.color;
+
+                if (itemData != null && itemData.icon != null)
+                {
+                    spriteRenderer.sprite = itemData.icon;
+                }
             }
 
             originalY = transform.position.y;
+            originalScale = transform.localScale;
 
-            // Создаем префаб подсказки если не назначен
             if (hintPrefab == null)
             {
                 CreateDefaultHintPrefab();
@@ -125,16 +138,19 @@ namespace Items
 
             ApplyVisualEffects();
 
-            // Обновляем таймер нахождения игрока рядом
-            if (isPlayerNear && !autoPickup)
+            // Обновляем таймер для показа подсказки
+            if (isHighlighted && !autoPickup)
             {
                 playerNearTimer += Time.deltaTime;
 
-                // Показываем подсказку после задержки
                 if (playerNearTimer >= hintDelay && !hintShown)
                 {
                     ShowPickupHint();
                 }
+            }
+            else
+            {
+                playerNearTimer = 0f;
             }
 
             // Автоподбор
@@ -147,7 +163,7 @@ namespace Items
                     Vector3 direction = (playerTransform.position - transform.position).normalized;
                     transform.position += direction * magnetSpeed * Time.deltaTime;
 
-                    if (distance <= pickupRadius)
+                    if (distance <= 0.5f) // Фиксированное расстояние для автоподбора
                     {
                         TryPickup();
                     }
@@ -175,33 +191,33 @@ namespace Items
             transform.DOScale(Vector3.one, 0.3f).SetEase(Ease.OutBack);
         }
 
-        private void OnTriggerEnter2D(Collider2D other)
-        {
-            if (!autoPickup && other.CompareTag("Player"))
-            {
-                isPlayerNear = true;
-                playerNearTimer = 0f;
-            }
-        }
+        // Убираем методы OnTrigger, так как теперь используем PickupManager
 
-        private void OnTriggerStay2D(Collider2D other)
+        public void SetHighlighted(bool highlighted)
         {
-            if (!autoPickup && other.CompareTag("Player"))
+            isHighlighted = highlighted;
+
+            if (highlighted)
             {
-                if (Input.GetKeyDown(KeyCode.E))
+                // Подсветка предмета
+                if (spriteRenderer != null)
                 {
-                    TryPickup();
+                    spriteRenderer.color = highlightColor;
+                    transform.DOScale(originalScale * highlightScale, 0.2f).SetEase(Ease.OutBack);
                 }
             }
-        }
-
-        private void OnTriggerExit2D(Collider2D other)
-        {
-            if (!autoPickup && other.CompareTag("Player"))
+            else
             {
-                isPlayerNear = false;
-                playerNearTimer = 0f;
+                // Убираем подсветку
+                if (spriteRenderer != null)
+                {
+                    spriteRenderer.color = originalColor;
+                    transform.DOScale(originalScale, 0.2f);
+                }
+
+                // Скрываем подсказку
                 HidePickupHint();
+                playerNearTimer = 0f;
             }
         }
 
@@ -322,22 +338,28 @@ namespace Items
             {
                 Destroy(hintInstance);
             }
+
+            // Уведомляем менеджер
+            if (PickupManager.Instance != null)
+            {
+                PickupManager.Instance.UnregisterPickupItem(this);
+            }
         }
 
         private void OnDrawGizmosSelected()
         {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(transform.position, pickupRadius);
+            // Показываем позицию подсказки
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireCube(transform.position + hintOffset, new Vector3(1, 0.2f, 0));
 
             if (autoPickup)
             {
                 Gizmos.color = Color.green;
                 Gizmos.DrawWireSphere(transform.position, magnetStartDistance);
-            }
 
-            // Показываем позицию подсказки
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawWireCube(transform.position + hintOffset, new Vector3(1, 0.2f, 0));
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(transform.position, 0.5f); // Дистанция автоподбора
+            }
         }
     }
 }
