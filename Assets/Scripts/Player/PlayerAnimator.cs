@@ -11,11 +11,11 @@ public class PlayerAnimator : MonoBehaviour
 
     private int lastDirection = 0;
     private bool isDirectionFrozen = false;
+    private bool lastFacingRight = true; // Запоминаем последнее направление взгляда
 
     public void FreezeDirection() => isDirectionFrozen = true;
     public void UnfreezeDirection() => isDirectionFrozen = false;
     public bool IsDirectionFrozen => isDirectionFrozen;
-
 
     public void UpdateAnimation(Vector2 movementInput)
     {
@@ -32,7 +32,7 @@ public class PlayerAnimator : MonoBehaviour
         armsAnimator.SetBool("isWalking", isWalking);
         armsAnimator.SetInteger("Direction", direction);
 
-        HandleFlip(movementInput);
+        HandleFlip(movementInput, direction);
         UpdateSortingOrder(direction);
 
         if (!isDirectionFrozen && isWalking)
@@ -56,7 +56,6 @@ public class PlayerAnimator : MonoBehaviour
 
         if (bodyAnimator == null)
         {
-
             Debug.LogError("Body Animator is NULL!");
         }
         else
@@ -65,17 +64,16 @@ public class PlayerAnimator : MonoBehaviour
             Debug.Log("JumpBody");
         }
 
-
-        if (armsAnimator == null) Debug.LogError("Arms Animator is NULL!");
+        if (armsAnimator == null)
+        {
+            Debug.LogError("Arms Animator is NULL!");
+        }
         else
         {
             armsAnimator.SetTrigger("Jump");
             Debug.Log("JumpArms");
         }
     }
-
-
-
 
     private void UpdateSortingOrder(int direction)
     {
@@ -89,12 +87,10 @@ public class PlayerAnimator : MonoBehaviour
         }
     }
 
-
-
     private int GetDirection(Vector2 input)
     {
         if (input == Vector2.zero)
-            return 0;
+            return lastDirection;
 
         if (Mathf.Abs(input.x) > Mathf.Abs(input.y))
         {
@@ -106,11 +102,23 @@ public class PlayerAnimator : MonoBehaviour
         }
     }
 
-    private void HandleFlip(Vector2 input)
+    private void HandleFlip(Vector2 input, int direction)
     {
+        // Обновляем флип только для горизонтального движения
         if (Mathf.Abs(input.x) > 0.01f)
         {
-            bool flip = input.x < 0;
+            bool shouldFaceRight = input.x > 0;
+            lastFacingRight = shouldFaceRight;
+
+            bool flip = !shouldFaceRight;
+            bodyRenderer.flipX = flip;
+            armsRenderer.flipX = flip;
+        }
+        // При движении вверх/вниз восстанавливаем последнее направление взгляда
+        else if (direction != 2 && Mathf.Abs(input.y) > 0.01f)
+        {
+            // Восстанавливаем флип на основе последнего направления
+            bool flip = !lastFacingRight;
             bodyRenderer.flipX = flip;
             armsRenderer.flipX = flip;
         }
@@ -130,4 +138,8 @@ public class PlayerAnimator : MonoBehaviour
         return lastDirection;
     }
 
+    public bool IsFacingRight()
+    {
+        return lastFacingRight;
+    }
 }
