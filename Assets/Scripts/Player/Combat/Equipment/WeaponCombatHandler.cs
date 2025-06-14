@@ -105,11 +105,11 @@
         private void PerformAttack(WeaponData weapon)
         {
             // Определяем точку атаки
-            Vector3 attackPos = attackPoint != null ?
-                attackPoint.position : transform.position + transform.forward;
+            Vector2 attackPos = attackPoint != null ?
+                (Vector2)attackPoint.position : (Vector2)transform.position + Vector2.right * transform.localScale.x;
 
-            // Проверяем попадания в радиусе
-            Collider[] hits = Physics.OverlapSphere(
+            // Проверяем попадания в радиусе (для 2D)
+            Collider2D[] hits = Physics2D.OverlapCircleAll(
                 attackPos,
                 weapon.attackRange,
                 weapon.targetLayers
@@ -117,26 +117,59 @@
 
             bool hitSomething = false;
 
+            // Получаем EquipmentController один раз
+            var equipment = GetComponent<Player.Equipment.EquipmentController>();
+            ToolData currentTool = null;
+
+            if (equipment != null)
+            {
+                currentTool = equipment.GetCurrentItem() as ToolData;
+            }
+
             foreach (var hit in hits)
             {
                 if (hit.gameObject == gameObject) continue;
 
-                // Проверяем интерфейс получения урона
+                // Проверяем интерфейс получения урона (для врагов)
                 var damageable = hit.GetComponent<IDamageable>();
                 if (damageable != null)
                 {
                     // Наносим урон
                     damageable.TakeDamage(weapon.damage, transform.position);
 
-                    // Отталкивание
-                    var rb = hit.GetComponent<Rigidbody>();
+                    // Отталкивание для 2D
+                    var rb = hit.GetComponent<Rigidbody2D>();
                     if (rb != null)
                     {
-                        Vector3 knockback = (hit.transform.position - transform.position).normalized;
-                        rb.AddForce(knockback * weapon.knockbackForce, ForceMode.Impulse);
+                        Vector2 knockback = ((Vector2)hit.transform.position - (Vector2)transform.position).normalized;
+                        rb.AddForce(knockback * weapon.knockbackForce, ForceMode2D.Impulse);
                     }
 
                     hitSomething = true;
+                    continue; // Переходим к следующему объекту
+                }
+
+                // Проверяем интерфейс IHarvestable (для ресурсов)
+                var harvestable = hit.GetComponent<IHarvestable>();
+                if (harvestable != null && !harvestable.IsDestroyed)
+                {
+                    // Если у нас есть инструмент
+                    if (currentTool != null)
+                    {
+                        harvestable.Harvest(currentTool, gameObject);
+                        hitSomething = true;
+                    }
+                    else if (weapon != null)
+                    {
+                        // Если используем оружие как инструмент (например, топор-оружие)
+                        // Создаем временный ToolData из WeaponData
+                        var tempTool = CreateToolFromWeapon(weapon);
+                        if (tempTool != null && harvestable.CanBeHarvestedWith(tempTool))
+                        {
+                            harvestable.Harvest(tempTool, gameObject);
+                            hitSomething = true;
+                        }
+                    }
                 }
             }
 
@@ -149,6 +182,23 @@
             {
                 OnAttackMissed?.Invoke();
             }
+        }
+
+        private ToolData CreateToolFromWeapon(WeaponData weapon)
+        {
+            // Проверяем, является ли оружие также инструментом (например, боевой топор)
+            if (weapon.itemName.ToLower().Contains("axe"))
+            {
+                var tempTool = ScriptableObject.CreateInstance<ToolData>();
+                tempTool.toolType = ToolType.Axe;
+                tempTool.damagePerUse = Mathf.RoundToInt(weapon.damage);
+                tempTool.efficiency = 0.8f; // Оружие менее эффективно как инструмент
+                tempTool.gatherableResources = new ResourceType[] { ResourceType.Wood };
+                return tempTool;
+            }
+            // Можно добавить другие типы оружия-инструментов
+
+            return null;
         }
 
         private void FinishAttack()

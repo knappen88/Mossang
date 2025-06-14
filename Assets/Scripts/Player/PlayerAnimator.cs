@@ -104,6 +104,9 @@ public class PlayerAnimator : MonoBehaviour
 
     private void HandleFlip(Vector2 input, int direction)
     {
+        // Отладка
+        bool wasFlipped = bodyRenderer.flipX;
+
         // Обновляем флип только для горизонтального движения
         if (Mathf.Abs(input.x) > 0.01f)
         {
@@ -113,6 +116,11 @@ public class PlayerAnimator : MonoBehaviour
             bool flip = !shouldFaceRight;
             bodyRenderer.flipX = flip;
             armsRenderer.flipX = flip;
+
+            if (wasFlipped != flip)
+            {
+                Debug.Log($"[PlayerAnimator] Horizontal movement: facing {(shouldFaceRight ? "RIGHT" : "LEFT")}, flipX = {flip}");
+            }
         }
         // При движении вверх/вниз восстанавливаем последнее направление взгляда
         else if (direction != 2 && Mathf.Abs(input.y) > 0.01f)
@@ -121,6 +129,11 @@ public class PlayerAnimator : MonoBehaviour
             bool flip = !lastFacingRight;
             bodyRenderer.flipX = flip;
             armsRenderer.flipX = flip;
+
+            if (wasFlipped != flip)
+            {
+                Debug.Log($"[PlayerAnimator] Vertical movement: restoring flip to {flip} (lastFacingRight = {lastFacingRight})");
+            }
         }
     }
 
