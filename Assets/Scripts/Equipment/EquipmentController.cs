@@ -12,10 +12,14 @@ namespace Player.Equipment
         [SerializeField] private Transform weaponSlot;
 
         [Header("Flip Tracking")]
-        [SerializeField] private SpriteRenderer flipTrackingRenderer; // Явно указываем какой рендерер отслеживать
+        [SerializeField] private SpriteRenderer flipTrackingRenderer;
 
         [Header("Weapon Display Settings")]
         [SerializeField] private WeaponDisplayConfiguration displayConfig;
+
+        [Header("Attack Settings")]
+        [SerializeField] private float attackCooldown = 0.5f;
+        [SerializeField] private bool useWeaponAttackSpeed = true;
 
         private ItemData currentItemData;
         private GameObject currentWeaponInstance;
@@ -24,14 +28,15 @@ namespace Player.Equipment
         private SpriteRenderer armsRenderer;
         private SpriteRenderer bodyRenderer;
 
-        // Хранение оригинальных контроллеров
         private RuntimeAnimatorController originalBodyController;
         private RuntimeAnimatorController originalArmsController;
 
-        // Текущее состояние
         private int currentDirection = 0;
         private bool isFacingRight = true;
         private Coroutine hideWeaponCoroutine;
+
+        private float lastAttackTime = 0f;
+        private bool isAttacking = false;
 
         private void Awake()
         {
@@ -39,22 +44,16 @@ namespace Player.Equipment
             InitializeReferences();
             CacheOriginalControllers();
 
-            // Создаем дефолтную конфигурацию если не назначена
             if (displayConfig == null)
             {
                 Debug.LogWarning("[EquipmentController] No display config assigned, creating default!");
                 displayConfig = ScriptableObject.CreateInstance<WeaponDisplayConfiguration>();
                 displayConfig.SetDefaultValues();
             }
-            else
-            {
-                Debug.Log("[EquipmentController] Display config loaded successfully!");
-            }
         }
 
         private void InitializeReferences()
         {
-            // Если не назначены, пытаемся найти
             if (bodyAnimator == null || armsAnimator == null)
             {
                 Transform parent = transform.parent;
@@ -82,14 +81,12 @@ namespace Player.Equipment
                 }
             }
 
-            // Если не указан flipTrackingRenderer, используем bodyRenderer
             if (flipTrackingRenderer == null && bodyRenderer != null)
             {
                 flipTrackingRenderer = bodyRenderer;
                 Debug.Log("[EquipmentController] Using body renderer for flip tracking");
             }
 
-            // Создаем слот для оружия если не назначен
             if (weaponSlot == null)
             {
                 GameObject slot = new GameObject("WeaponSlot");
@@ -114,7 +111,6 @@ namespace Player.Equipment
             UnequipCurrentItem();
             currentItemData = itemData;
 
-            // Создаем экземпляр оружия
             GameObject prefabToSpawn = GetWeaponPrefab(itemData);
 
             if (prefabToSpawn != null)
@@ -144,7 +140,6 @@ namespace Player.Equipment
             WeaponAnimationSet animSet = GetAnimationSet();
             if (animSet == null) return;
 
-            // Применяем анимации к Body
             if (bodyAnimator != null && animSet.bodyAttackFront != null)
             {
                 var overrideController = new AnimatorOverrideController(originalBodyController);
@@ -154,7 +149,6 @@ namespace Player.Equipment
                 bodyAnimator.runtimeAnimatorController = overrideController;
             }
 
-            // Применяем анимации к Arms
             if (armsAnimator != null && animSet.armsAttackFront != null)
             {
                 var overrideController = new AnimatorOverrideController(originalArmsController);
@@ -177,13 +171,11 @@ namespace Player.Equipment
 
         public void UnequipCurrentItem()
         {
-            // Возвращаем оригинальные анимации
             if (bodyAnimator != null)
                 bodyAnimator.runtimeAnimatorController = originalBodyController;
             if (armsAnimator != null)
                 armsAnimator.runtimeAnimatorController = originalArmsController;
 
-            // Удаляем экземпляр оружия
             if (currentWeaponInstance != null)
             {
                 if (hideWeaponCoroutine != null)
@@ -203,22 +195,34 @@ namespace Player.Equipment
 
         public void Attack()
         {
+            if (!CanAttack()) return;
             if (currentItemData == null) return;
 
-            // Используем явно указанный рендерер для отслеживания флипа
             SpriteRenderer trackingRenderer = flipTrackingRenderer != null ? flipTrackingRenderer : bodyRenderer;
 
-            // Зафиксировать направление атаки
+            if (trackingRenderer == null)
+            {
+                Debug.LogError("[EquipmentController] No renderer available for flip tracking!");
+                return;
+            }
+
+            if (bodyAnimator == null || armsAnimator == null)
+            {
+                Debug.LogError("[EquipmentController] Missing animators! Cannot perform attack.");
+                return;
+            }
+
+            isAttacking = true;
+            lastAttackTime = Time.time;
+
             currentDirection = bodyAnimator.GetInteger("Direction");
-            isFacingRight = trackingRenderer != null ? !trackingRenderer.flipX : true;
+            isFacingRight = !trackingRenderer.flipX;
 
-            ShowWeapon(); // обновит отображение и позицию оружия
+            ShowWeapon();
 
-            // Установить направление в weaponAnimator ДО вызова триггера
             if (weaponAnimator != null)
                 weaponAnimator.SetInteger("Direction", currentDirection);
 
-            // Атакующие триггеры
             bodyAnimator.SetTrigger("Attack");
             armsAnimator.SetTrigger("Attack");
 
@@ -232,13 +236,151 @@ namespace Player.Equipment
                 hideWeaponCoroutine = StartCoroutine(HideWeaponAfterDelay(animationDuration));
             }
 
+            // Выполняем проверку попаданий СРАЗУ (можно добавить задержку если нужно)
+            StartCoroutine(PerformAttackWithDelay(0.2f)); // Небольшая задержка для синхронизации с анимацией
+
+            StartCoroutine(ResetAttackFlag());
+
             Debug.Log($"Attacking with: {currentItemData.itemName}, direction = {currentDirection}");
+        }
+
+        private IEnumerator PerformAttackWithDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            PerformAttackCheck();
+        }
+
+        private void PerformAttackCheck()
+        {
+            // Определяем точку атаки
+            Vector2 attackOffset = Vector2.zero;
+            float attackRange = 1.5f;
+
+            switch (currentDirection)
+            {
+                case 0: // Front
+                    attackOffset = new Vector2(0, -0.5f);
+                    break;
+                case 1: // Back
+                    attackOffset = new Vector2(0, 0.5f);
+                    break;
+                case 2: // Side
+                    attackOffset = new Vector2(isFacingRight ? 0.5f : -0.5f, 0);
+                    break;
+            }
+
+            Vector2 attackPos = (Vector2)transform.position + attackOffset;
+
+            // Проверяем тип экипированного предмета
+            if (currentItemData is ToolData tool)
+            {
+                // Для инструментов
+                attackRange = tool.gatherRadius;
+
+                // Ищем все объекты в радиусе
+                Collider2D[] hits = Physics2D.OverlapCircleAll(attackPos, attackRange);
+
+                Debug.Log($"[Tool Attack] Found {hits.Length} objects in range {attackRange}");
+
+                foreach (var hit in hits)
+                {
+                    if (hit.gameObject == gameObject) continue;
+
+                    // Проверяем на HarvestableTree напрямую
+                    var tree = hit.GetComponent<HarvestableTree>();
+                    if (tree != null)
+                    {
+                        Debug.Log($"[Tool Attack] Found tree: {hit.name}");
+                        tree.Harvest(tool, gameObject);
+                        PlayToolHitSound(tool);
+                    }
+                }
+            }
+            else if (currentItemData is WeaponData weapon)
+            {
+                // Для оружия
+                attackRange = weapon.attackRange;
+
+                Collider2D[] hits = Physics2D.OverlapCircleAll(attackPos, attackRange);
+
+                foreach (var hit in hits)
+                {
+                    if (hit.gameObject == gameObject) continue;
+
+                    var damageable = hit.GetComponent<IDamageable>();
+                    if (damageable != null && damageable.IsAlive)
+                    {
+                        damageable.TakeDamage(weapon.damage, transform.position);
+                    }
+                }
+            }
+        }
+
+        private bool CanAttack()
+        {
+            if (isAttacking)
+            {
+                Debug.Log("[EquipmentController] Already attacking!");
+                return false;
+            }
+
+            float cooldown = GetAttackCooldown();
+
+            if (Time.time - lastAttackTime < cooldown)
+            {
+                float remainingTime = cooldown - (Time.time - lastAttackTime);
+                Debug.Log($"[EquipmentController] Attack on cooldown! Wait {remainingTime:F2}s");
+                return false;
+            }
+
+            return true;
+        }
+
+        private float GetAttackCooldown()
+        {
+            if (!useWeaponAttackSpeed || currentItemData == null)
+            {
+                return attackCooldown;
+            }
+
+            if (currentItemData is WeaponData weapon)
+            {
+                return weapon.attackSpeed > 0 ? 1f / weapon.attackSpeed : attackCooldown;
+            }
+
+            if (currentItemData is ToolData tool)
+            {
+                return 1f; // Инструменты медленнее
+            }
+
+            return attackCooldown;
+        }
+
+        private IEnumerator ResetAttackFlag()
+        {
+            float animationDuration = GetAttackAnimationDuration();
+            yield return new WaitForSeconds(animationDuration);
+            isAttacking = false;
+        }
+
+        private void PlayToolHitSound(ToolData tool)
+        {
+            if (tool.hitSounds != null && tool.hitSounds.Length > 0)
+            {
+                var audioSource = GetComponent<AudioSource>();
+                if (audioSource == null)
+                {
+                    audioSource = gameObject.AddComponent<AudioSource>();
+                }
+
+                var randomSound = tool.hitSounds[Random.Range(0, tool.hitSounds.Length)];
+                audioSource.PlayOneShot(randomSound);
+            }
         }
 
         private void ShowWeapon()
         {
             if (currentWeaponInstance == null) return;
-
             currentWeaponInstance.SetActive(true);
             UpdateWeaponDisplay();
         }
@@ -247,20 +389,13 @@ namespace Player.Equipment
         {
             if (weaponRenderer == null || armsRenderer == null) return;
 
-            // Используем явно указанный рендерер для отслеживания флипа
             SpriteRenderer trackingRenderer = flipTrackingRenderer != null ? flipTrackingRenderer : bodyRenderer;
-            if (trackingRenderer == null)
-            {
-                Debug.LogError("[EquipmentController] No renderer to track flip!");
-                return;
-            }
+            if (trackingRenderer == null) return;
 
-            // Получаем направление и направление взгляда
             currentDirection = bodyAnimator.GetInteger("Direction");
             bool rendererFlipX = trackingRenderer.flipX;
             isFacingRight = !rendererFlipX;
 
-            // Базовые значения
             Vector2 positionOffset = Vector2.zero;
             float rotationZ = 0f;
             int sortingOffset = 0;
@@ -285,44 +420,18 @@ namespace Player.Equipment
                     positionOffset = isFacingRight ? new Vector2(0.5f, 0f) : new Vector2(-0.5f, 0f);
                     rotationZ = 0f;
                     sortingOffset = isFacingRight ? 1 : -1;
-                    // Флип оружия когда trackingRenderer.flipX = false (смотрит вправо)
                     flipX = !rendererFlipX;
-
-                    Debug.Log($"[SIDE ATTACK] Tracking {trackingRenderer.name}.flipX = {rendererFlipX}, Setting Weapon.flipX = {flipX}");
-                    break;
-
-                default:
                     break;
             }
 
-            // Применяем позицию и поворот
             currentWeaponInstance.transform.localPosition = positionOffset;
             currentWeaponInstance.transform.localRotation = Quaternion.Euler(0, 0, rotationZ);
 
-            // Применяем flip
             weaponRenderer.flipX = flipX;
             weaponRenderer.flipY = flipY;
 
-            // Применяем сортировку
             weaponRenderer.sortingLayerName = armsRenderer.sortingLayerName;
             weaponRenderer.sortingOrder = armsRenderer.sortingOrder + sortingOffset;
-
-            Debug.Log($"[WeaponDisplay] Dir: {currentDirection}, Tracking: {trackingRenderer.name}, TrackerFlip: {rendererFlipX}, WeaponFlip: {flipX}");
-        }
-
-        private WeaponPositionSettings GetCurrentPositionSettings()
-        {
-            switch (currentDirection)
-            {
-                case 0: // Front
-                    return displayConfig.frontAttackSettings;
-                case 1: // Back
-                    return displayConfig.backAttackSettings;
-                case 2: // Side
-                    return isFacingRight ? displayConfig.sideRightSettings : displayConfig.sideLeftSettings;
-                default:
-                    return displayConfig.sideRightSettings;
-            }
         }
 
         private IEnumerator HideWeaponAfterDelay(float delay)
@@ -340,24 +449,25 @@ namespace Player.Equipment
         private float GetAttackAnimationDuration()
         {
             var animSet = GetAnimationSet();
-            if (animSet != null)
-                return animSet.attackDuration;
-
-            return 1f; // Дефолтная длительность
+            return animSet != null ? animSet.attackDuration : 1f;
         }
 
         public ItemData GetCurrentItem() => currentItemData;
         public bool HasItemEquipped() => currentItemData != null;
+        public float GetAttackCooldownProgress()
+        {
+            float cooldown = GetAttackCooldown();
+            float timeSinceLastAttack = Time.time - lastAttackTime;
+            return Mathf.Clamp01(timeSinceLastAttack / cooldown);
+        }
+        public bool IsAttackReady() => CanAttack();
 
         private void Update()
         {
-            // Обновляем отображение оружия если оно активно
             if (currentWeaponInstance != null && currentWeaponInstance.activeSelf)
             {
-                // Используем явно указанный рендерер для отслеживания флипа
                 SpriteRenderer trackingRenderer = flipTrackingRenderer != null ? flipTrackingRenderer : bodyRenderer;
 
-                // Проверяем изменение направления
                 int newDirection = bodyAnimator.GetInteger("Direction");
                 bool newFacingRight = trackingRenderer != null ? !trackingRenderer.flipX : true;
 
@@ -368,12 +478,10 @@ namespace Player.Equipment
                     UpdateWeaponDisplay();
                 }
 
-                // Синхронизируем параметры аниматора
                 if (weaponAnimator != null)
                 {
                     weaponAnimator.SetInteger("Direction", currentDirection);
 
-                    // ВАЖНО: Проверяем не перезаписывает ли аниматор флип
                     if (currentDirection == 2 && weaponRenderer != null && trackingRenderer != null)
                     {
                         bool expectedFlip = !trackingRenderer.flipX;
@@ -384,6 +492,42 @@ namespace Player.Equipment
                         }
                     }
                 }
+            }
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            if (!Application.isPlaying) return;
+
+            Vector2 attackOffset = Vector2.zero;
+            float attackRange = 1.5f;
+
+            switch (currentDirection)
+            {
+                case 0: attackOffset = new Vector2(0, -0.5f); break;
+                case 1: attackOffset = new Vector2(0, 0.5f); break;
+                case 2: attackOffset = new Vector2(isFacingRight ? 0.5f : -0.5f, 0); break;
+            }
+
+            Vector2 attackPos = (Vector2)transform.position + attackOffset;
+
+            if (currentItemData is WeaponData weapon)
+                attackRange = weapon.attackRange;
+            else if (currentItemData is ToolData tool)
+                attackRange = tool.gatherRadius;
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(attackPos, attackRange);
+
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(attackPos, 0.1f);
+        }
+
+        private void OnDestroy()
+        {
+            if (hideWeaponCoroutine != null)
+            {
+                StopCoroutine(hideWeaponCoroutine);
             }
         }
     }

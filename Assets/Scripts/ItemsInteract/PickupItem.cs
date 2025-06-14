@@ -5,9 +5,6 @@ using UnityEngine.UI;
 
 namespace Items
 {
-    /// <summary>
-    /// Компонент для предметов, которые можно подобрать с земли
-    /// </summary>
     [RequireComponent(typeof(Collider2D))]
     public class PickupItem : MonoBehaviour
     {
@@ -16,12 +13,24 @@ namespace Items
         [SerializeField] private int quantity = 1;
 
         [Header("Pickup Settings")]
-        [SerializeField] private bool autoPickup = false;
+        [SerializeField] private float pickupRadius = 2f;
+        [SerializeField] private bool forceAutoPickup = false; // Принудительно включить автоподбор
+        [SerializeField] private bool forceManualPickup = false; // Принудительно выключить автоподбор
         [SerializeField] private float magnetSpeed = 5f;
         [SerializeField] private float magnetStartDistance = 2f;
 
+        [Header("Auto-Pickup by Type")]
+        [Tooltip("Типы предметов, которые подбираются автоматически")]
+        [SerializeField]
+        private ItemType[] autoPickupTypes = new ItemType[]
+        {
+            ItemType.Resource,
+            ItemType.Consumable,
+            ItemType.Misc
+        };
+
         [Header("Hint Settings")]
-        [SerializeField] private float hintDelay = 2f;
+        [SerializeField] private float hintDelay = 0.5f;
         [SerializeField] private GameObject hintPrefab;
         [SerializeField] private Vector3 hintOffset = new Vector3(0, 1f, 0);
 
@@ -59,7 +68,29 @@ namespace Items
         private Vector3 originalScale;
 
         public bool IsBeingPickedUp => isBeingPickedUp;
-        public bool AutoPickup => autoPickup;
+
+        // Свойство для определения автоподбора
+        public bool AutoPickup
+        {
+            get
+            {
+                // Принудительные настройки имеют приоритет
+                if (forceAutoPickup) return true;
+                if (forceManualPickup) return false;
+
+                // Проверяем по типу предмета
+                if (itemData != null)
+                {
+                    foreach (var type in autoPickupTypes)
+                    {
+                        if (itemData.ItemType == type)
+                            return true;
+                    }
+                }
+
+                return false;
+            }
+        }
 
         private void Awake()
         {
@@ -72,152 +103,212 @@ namespace Items
             if (spriteRenderer != null)
             {
                 originalColor = spriteRenderer.color;
-
-                if (itemData != null && itemData.icon != null)
-                {
-                    spriteRenderer.sprite = itemData.icon;
-                }
+                originalScale = transform.localScale;
             }
 
             originalY = transform.position.y;
-            originalScale = transform.localScale;
-
-            if (hintPrefab == null)
-            {
-                CreateDefaultHintPrefab();
-            }
-        }
-
-        private void CreateDefaultHintPrefab()
-        {
-            // Создаем простую подсказку если префаб не назначен
-            GameObject hint = new GameObject("PickupHint");
-
-            // Добавляем Canvas для мирового пространства
-            Canvas canvas = hint.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.WorldSpace;
-            canvas.sortingLayerName = "UI";
-
-            // Добавляем CanvasScaler
-            CanvasScaler scaler = hint.AddComponent<CanvasScaler>();
-
-            // Создаем текст
-            GameObject textGO = new GameObject("Text");
-            textGO.transform.SetParent(hint.transform);
-
-            TextMeshProUGUI text = textGO.AddComponent<TextMeshProUGUI>();
-            text.text = "Press [E] to pickup";
-            text.fontSize = 2;
-            text.alignment = TextAlignmentOptions.Center;
-            text.color = Color.white;
-
-            // Настраиваем RectTransform
-            RectTransform rectTransform = text.GetComponent<RectTransform>();
-            rectTransform.sizeDelta = new Vector2(10, 2);
-            rectTransform.localScale = Vector3.one * 0.1f;
-
-            hintPrefab = hint;
-            hint.SetActive(false);
         }
 
         private void Start()
         {
+            // Устанавливаем спрайт из ItemData
+            if (itemData != null && spriteRenderer != null)
+            {
+                spriteRenderer.sprite = itemData.icon;
+            }
+
+            // Находим игрока
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
             {
                 playerTransform = player.transform;
-                playerInventory = player.GetComponentInChildren<Inventory>();
+                playerInventory = player.GetComponent<Inventory>();
             }
 
-            AnimateSpawn();
+            // Начальная анимация появления
+            transform.localScale = Vector3.zero;
+            transform.DOScale(originalScale, 0.3f).SetEase(Ease.OutBack);
         }
 
         private void Update()
         {
-            if (isBeingPickedUp) return;
+            if (playerTransform == null || isBeingPickedUp) return;
 
-            ApplyVisualEffects();
+            float distanceToPlayer = Vector2.Distance(transform.position, playerTransform.position);
 
-            // Обновляем таймер для показа подсказки
-            if (isHighlighted && !autoPickup)
+            // Визуальные эффекты
+            UpdateVisualEffects();
+
+            // Магнит и автоподбор
+            if (AutoPickup && distanceToPlayer <= magnetStartDistance)
             {
-                playerNearTimer += Time.deltaTime;
+                // Двигаемся к игроку
+                Vector2 direction = (playerTransform.position - transform.position).normalized;
+                transform.position = Vector2.MoveTowards(
+                    transform.position,
+                    playerTransform.position,
+                    magnetSpeed * Time.deltaTime
+                );
 
-                if (playerNearTimer >= hintDelay && !hintShown)
+                // Автоподбор при приближении
+                if (distanceToPlayer <= 0.5f)
+                {
+                    TryPickup();
+                }
+            }
+            else if (!AutoPickup)
+            {
+                // Обработка подсказки для ручного подбора
+                HandlePickupHint(distanceToPlayer);
+            }
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (!other.CompareTag("Player")) return;
+
+            var inventory = other.GetComponent<Inventory>();
+            if (inventory != null)
+            {
+                playerInventory = inventory;
+                playerTransform = other.transform;
+
+                // Показываем подсказку только для предметов с ручным подбором
+                if (!AutoPickup)
                 {
                     ShowPickupHint();
                 }
             }
-            else
+        }
+
+        private void OnTriggerStay2D(Collider2D other)
+        {
+            if (!other.CompareTag("Player") || AutoPickup) return;
+
+            // Ручной подбор на E
+            if (Input.GetKeyDown(KeyCode.E))
             {
-                playerNearTimer = 0f;
-            }
-
-            // Автоподбор
-            if (autoPickup && playerTransform != null)
-            {
-                float distance = Vector2.Distance(transform.position, playerTransform.position);
-
-                if (distance <= magnetStartDistance)
-                {
-                    Vector3 direction = (playerTransform.position - transform.position).normalized;
-                    transform.position += direction * magnetSpeed * Time.deltaTime;
-
-                    if (distance <= 0.5f) // Фиксированное расстояние для автоподбора
-                    {
-                        TryPickup();
-                    }
-                }
+                TryPickup();
             }
         }
 
-        private void ApplyVisualEffects()
+        private void OnTriggerExit2D(Collider2D other)
         {
+            if (!other.CompareTag("Player")) return;
+
+            // Убираем подсветку
+            if (isHighlighted)
+            {
+                SetHighlighted(false);
+            }
+
+            // Скрываем подсказку
+            HidePickupHint();
+            playerNearTimer = 0f;
+        }
+
+        private void UpdateVisualEffects()
+        {
+            // Покачивание
             if (bobHeight > 0)
             {
                 float newY = originalY + Mathf.Sin(Time.time * bobSpeed) * bobHeight;
                 transform.position = new Vector3(transform.position.x, newY, transform.position.z);
             }
 
+            // Вращение
             if (rotateItem)
             {
                 transform.Rotate(0, 0, rotateSpeed * Time.deltaTime);
             }
         }
 
-        private void AnimateSpawn()
+        private void HandlePickupHint(float distanceToPlayer)
         {
-            transform.localScale = Vector3.zero;
-            transform.DOScale(Vector3.one, 0.3f).SetEase(Ease.OutBack);
-        }
-
-        // Убираем методы OnTrigger, так как теперь используем PickupManager
-
-        public void SetHighlighted(bool highlighted)
-        {
-            isHighlighted = highlighted;
-
-            if (highlighted)
+            if (distanceToPlayer <= pickupRadius)
             {
                 // Подсветка предмета
-                if (spriteRenderer != null)
+                if (!isHighlighted)
                 {
-                    spriteRenderer.color = highlightColor;
-                    transform.DOScale(originalScale * highlightScale, 0.2f).SetEase(Ease.OutBack);
+                    SetHighlighted(true);
+                }
+
+                // Таймер для показа подсказки
+                playerNearTimer += Time.deltaTime;
+                if (playerNearTimer >= hintDelay && !hintShown)
+                {
+                    ShowPickupHint();
+                    hintShown = true;
                 }
             }
             else
             {
                 // Убираем подсветку
-                if (spriteRenderer != null)
+                if (isHighlighted)
                 {
-                    spriteRenderer.color = originalColor;
-                    transform.DOScale(originalScale, 0.2f);
+                    SetHighlighted(false);
                 }
 
                 // Скрываем подсказку
                 HidePickupHint();
                 playerNearTimer = 0f;
+                hintShown = false;
+            }
+        }
+
+        public void SetHighlighted(bool highlighted)
+        {
+            isHighlighted = highlighted;
+
+            if (spriteRenderer != null)
+            {
+                if (highlighted)
+                {
+                    spriteRenderer.color = highlightColor;
+                    transform.DOScale(originalScale * highlightScale, 0.2f);
+                }
+                else
+                {
+                    spriteRenderer.color = originalColor;
+                    transform.DOScale(originalScale, 0.2f);
+                }
+            }
+        }
+
+        private void ShowPickupHint()
+        {
+            if (hintInstance == null && hintPrefab != null)
+            {
+                hintInstance = Instantiate(hintPrefab, transform.position + hintOffset, Quaternion.identity);
+                hintInstance.transform.SetParent(transform);
+
+                // Настраиваем текст подсказки
+                var textComponent = hintInstance.GetComponentInChildren<TextMeshProUGUI>();
+                if (textComponent != null)
+                {
+                    string itemName = itemData != null ? itemData.itemName : "Item";
+                    textComponent.text = $"[E] Pick up {itemName}";
+                }
+
+                // Анимация появления
+                CanvasGroup canvasGroup = hintInstance.GetComponentInChildren<CanvasGroup>();
+                if (canvasGroup == null)
+                {
+                    canvasGroup = hintInstance.AddComponent<CanvasGroup>();
+                }
+
+                canvasGroup.alpha = 0;
+                canvasGroup.DOFade(1f, 0.3f);
+            }
+        }
+
+        private void HidePickupHint()
+        {
+            if (hintInstance != null)
+            {
+                Destroy(hintInstance);
+                hintInstance = null;
+                hintShown = false;
             }
         }
 
@@ -246,6 +337,12 @@ namespace Items
             }
         }
 
+        // Публичный метод для принудительного подбора
+        public void ForcePickup()
+        {
+            TryPickup();
+        }
+
         private void PlayPickupEffects()
         {
             if (pickupSound != null)
@@ -260,106 +357,30 @@ namespace Items
             }
         }
 
-        private void ShowPickupHint()
+        public void SetItem(ItemData data, int amount = 1)
         {
-            if (hintInstance == null && hintPrefab != null)
-            {
-                // Создаем подсказку
-                hintInstance = Instantiate(hintPrefab, transform.position + hintOffset, Quaternion.identity);
-                hintInstance.transform.SetParent(transform);
-
-                // Анимация появления
-                CanvasGroup canvasGroup = hintInstance.GetComponentInChildren<CanvasGroup>();
-                if (canvasGroup == null)
-                {
-                    canvasGroup = hintInstance.AddComponent<CanvasGroup>();
-                }
-
-                canvasGroup.alpha = 0;
-                canvasGroup.DOFade(1f, 0.3f);
-
-                // Анимация покачивания
-                Transform hintTransform = hintInstance.transform;
-                hintTransform.localScale = Vector3.one * 0.8f;
-                hintTransform.DOScale(Vector3.one, 0.3f).SetEase(Ease.OutBack);
-
-                // Легкое покачивание вверх-вниз
-                hintTransform.DOLocalMoveY(hintOffset.y + 0.1f, 1f)
-                    .SetLoops(-1, LoopType.Yoyo)
-                    .SetEase(Ease.InOutSine);
-
-                hintShown = true;
-            }
-        }
-
-        private void HidePickupHint()
-        {
-            if (hintInstance != null)
-            {
-                // Анимация исчезновения
-                CanvasGroup canvasGroup = hintInstance.GetComponentInChildren<CanvasGroup>();
-                if (canvasGroup != null)
-                {
-                    canvasGroup.DOFade(0f, 0.2f).OnComplete(() => {
-                        Destroy(hintInstance);
-                        hintInstance = null;
-                    });
-                }
-                else
-                {
-                    Destroy(hintInstance);
-                    hintInstance = null;
-                }
-
-                hintShown = false;
-            }
-        }
-
-        public void SetItem(ItemData item, int amount = 1)
-        {
-            itemData = item;
+            itemData = data;
             quantity = amount;
 
-            if (spriteRenderer != null && item != null && item.icon != null)
+            if (spriteRenderer != null && data != null)
             {
-                spriteRenderer.sprite = item.icon;
+                spriteRenderer.sprite = data.icon;
             }
-        }
-
-        public void ForcePickup()
-        {
-            TryPickup();
         }
 
         private void OnDestroy()
         {
-            // Убираем подсказку при уничтожении
-            if (hintInstance != null)
-            {
-                Destroy(hintInstance);
-            }
-
-            // Уведомляем менеджер
-            if (PickupManager.Instance != null)
-            {
-                PickupManager.Instance.UnregisterPickupItem(this);
-            }
+            // Убираем подсказку
+            HidePickupHint();
         }
 
         private void OnDrawGizmosSelected()
         {
-            // Показываем позицию подсказки
             Gizmos.color = Color.cyan;
-            Gizmos.DrawWireCube(transform.position + hintOffset, new Vector3(1, 0.2f, 0));
+            Gizmos.DrawWireSphere(transform.position, pickupRadius);
 
-            if (autoPickup)
-            {
-                Gizmos.color = Color.green;
-                Gizmos.DrawWireSphere(transform.position, magnetStartDistance);
-
-                Gizmos.color = Color.red;
-                Gizmos.DrawWireSphere(transform.position, 0.5f); // Дистанция автоподбора
-            }
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(transform.position, magnetStartDistance);
         }
     }
 }
