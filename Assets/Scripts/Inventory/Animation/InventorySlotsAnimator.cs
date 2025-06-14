@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using DG.Tweening;
 using System.Collections;
+using System.Collections.Generic;
 
 public class InventorySlotsAnimator : MonoBehaviour
 {
@@ -10,43 +11,88 @@ public class InventorySlotsAnimator : MonoBehaviour
     [SerializeField] private Ease slotEase = Ease.OutBack;
 
     [Header("References")]
-    [SerializeField] private Transform inventorySlotsContainer; // Контейнер со слотами инвентаря
+    [SerializeField] private Transform inventorySlotsContainer;
 
     private InventoryToggleUI toggleUI;
     private InventorySlotUI[] inventorySlots;
+    private Transform hotbarTransform; // Кэшируем transform хотбара
 
     private void Awake()
     {
         toggleUI = GetComponent<InventoryToggleUI>();
 
-        // Получаем слоты только из контейнера инвентаря, а не из всего UI
+        // Кэшируем transform хотбара один раз
+        GameObject hotbarObj = GameObject.Find("Hotbar");
+        if (hotbarObj != null)
+        {
+            hotbarTransform = hotbarObj.transform;
+        }
+
+        // Получаем слоты
+        CollectInventorySlots();
+    }
+
+    private void CollectInventorySlots()
+    {
         if (inventorySlotsContainer != null)
         {
             inventorySlots = inventorySlotsContainer.GetComponentsInChildren<InventorySlotUI>(true);
         }
         else
         {
-            // Если контейнер не указан, пытаемся найти слоты по имени родителя
+            // Собираем только слоты инвентаря, исключая хотбар
             var allSlots = GetComponentsInChildren<InventorySlotUI>(true);
-            var tempList = new System.Collections.Generic.List<InventorySlotUI>();
+            var inventorySlotsList = new List<InventorySlotUI>();
 
             foreach (var slot in allSlots)
             {
-                // Исключаем слоты хотбара
-                if (!slot.GetComponentInParent<HotbarSlotUI>() &&
-                    !slot.transform.IsChildOf(GameObject.Find("Hotbar")?.transform))
+                // Проверяем что слот не из хотбара
+                if (!IsSlotFromHotbar(slot))
                 {
-                    tempList.Add(slot);
+                    inventorySlotsList.Add(slot);
                 }
             }
 
-            inventorySlots = tempList.ToArray();
+            inventorySlots = inventorySlotsList.ToArray();
         }
+
+        Debug.Log($"[InventorySlotsAnimator] Found {inventorySlots.Length} inventory slots");
+    }
+
+    private bool IsSlotFromHotbar(InventorySlotUI slot)
+    {
+        // Проверяем по компоненту HotbarSlotUI
+        if (slot.GetComponentInParent<HotbarSlotUI>() != null)
+            return true;
+
+        // Проверяем по иерархии если есть кэшированный hotbar
+        if (hotbarTransform != null && slot.transform.IsChildOf(hotbarTransform))
+            return true;
+
+        // Проверяем по имени родителя
+        Transform parent = slot.transform.parent;
+        while (parent != null)
+        {
+            if (parent.name.ToLower().Contains("hotbar"))
+                return true;
+            parent = parent.parent;
+        }
+
+        return false;
     }
 
     private void OnEnable()
     {
-        StartCoroutine(AnimateSlots());
+        if (inventorySlots != null && inventorySlots.Length > 0)
+        {
+            StartCoroutine(AnimateSlots());
+        }
+    }
+
+    private void OnDisable()
+    {
+        // Останавливаем все анимации при отключении
+        StopAllCoroutines();
     }
 
     private IEnumerator AnimateSlots()
@@ -54,13 +100,14 @@ public class InventorySlotsAnimator : MonoBehaviour
         // Ждем один кадр чтобы UI обновился
         yield return null;
 
-        // Анимируем только слоты инвентаря, не трогая хотбар
+        // Анимируем только слоты инвентаря
         for (int i = 0; i < inventorySlots.Length; i++)
         {
             var slot = inventorySlots[i];
             if (slot == null) continue;
 
             var rectTransform = slot.GetComponent<RectTransform>();
+            if (rectTransform == null) continue;
 
             // Начальное состояние
             rectTransform.localScale = Vector3.zero;
@@ -69,6 +116,22 @@ public class InventorySlotsAnimator : MonoBehaviour
             rectTransform.DOScale(1f, slotDuration)
                 .SetEase(slotEase)
                 .SetDelay(i * slotDelay);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Останавливаем все твины при уничтожении
+        foreach (var slot in inventorySlots)
+        {
+            if (slot != null)
+            {
+                var rectTransform = slot.GetComponent<RectTransform>();
+                if (rectTransform != null)
+                {
+                    rectTransform.DOKill();
+                }
+            }
         }
     }
 }

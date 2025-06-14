@@ -3,59 +3,80 @@ using DG.Tweening;
 
 public class InventoryToggleUI : MonoBehaviour
 {
-    [Header("References")]
-    [SerializeField] private GameObject inventoryPanel; // Только панель инвентаря, без хотбара
-    [SerializeField] private CanvasGroup inventoryCanvasGroup; // CanvasGroup именно для inventoryPanel
-    [SerializeField] private RectTransform inventoryPanelTransform; // RectTransform именно для inventoryPanel
-
     [Header("Animation Settings")]
     [SerializeField] private float animationDuration = 0.3f;
     [SerializeField] private Ease openEase = Ease.OutBack;
     [SerializeField] private Ease closeEase = Ease.InBack;
 
+    [Header("References")]
+    [SerializeField] private GameObject inventoryPanel;
+    [SerializeField] private CanvasGroup inventoryCanvasGroup;
+    [SerializeField] private RectTransform inventoryPanelTransform;
+
     private bool isOpen = false;
     private bool isAnimating = false;
     private Tween currentTween;
 
+    private void Awake()
+    {
+        ValidateReferences();
+    }
+
     private void Start()
     {
-        Debug.Log($"[InventoryToggleUI] Start - inventoryPanel = {inventoryPanel?.name}");
-
-        // ВАЖНО: Получаем компоненты именно с inventoryPanel, а не с текущего GameObject
+        // Убеждаемся что инвентарь закрыт при старте
         if (inventoryPanel != null)
         {
-            // Создаем CanvasGroup на inventoryPanel если его нет
-            if (inventoryCanvasGroup == null)
-            {
-                inventoryCanvasGroup = inventoryPanel.GetComponent<CanvasGroup>();
-                if (inventoryCanvasGroup == null)
-                {
-                    inventoryCanvasGroup = inventoryPanel.AddComponent<CanvasGroup>();
-                }
-            }
-
-            // Получаем RectTransform inventoryPanel
-            if (inventoryPanelTransform == null)
-            {
-                inventoryPanelTransform = inventoryPanel.GetComponent<RectTransform>();
-            }
-
-            // Начальное состояние - скрываем ТОЛЬКО панель инвентаря
             inventoryPanel.SetActive(false);
-            inventoryCanvasGroup.alpha = 0f;
-            inventoryPanelTransform.localScale = Vector3.zero;
-
-            Debug.Log($"[InventoryToggleUI] Инициализация завершена. Скрыт только: {inventoryPanel.name}");
+            isOpen = false;
         }
 
-        // Проверяем что у нас самих нет CanvasGroup который может влиять на детей
-        var myCanvasGroup = GetComponent<CanvasGroup>();
-        if (myCanvasGroup != null)
+        // Устанавливаем начальные значения
+        if (inventoryCanvasGroup != null)
         {
-            Debug.LogWarning($"[InventoryToggleUI] На {gameObject.name} есть CanvasGroup! Это может влиять на видимость детей!");
-            myCanvasGroup.alpha = 1f;
-            myCanvasGroup.interactable = true;
-            myCanvasGroup.blocksRaycasts = true;
+            inventoryCanvasGroup.alpha = 0f;
+            inventoryCanvasGroup.interactable = false;
+            inventoryCanvasGroup.blocksRaycasts = false;
+        }
+
+        if (inventoryPanelTransform != null)
+        {
+            inventoryPanelTransform.localScale = Vector3.zero;
+        }
+    }
+
+    private void ValidateReferences()
+    {
+        if (inventoryPanel == null)
+        {
+            Debug.LogError("[InventoryToggleUI] Inventory Panel не назначена!");
+            enabled = false;
+            return;
+        }
+
+        // Пытаемся получить компоненты автоматически если не назначены
+        if (inventoryCanvasGroup == null)
+        {
+            inventoryCanvasGroup = inventoryPanel.GetComponent<CanvasGroup>();
+            if (inventoryCanvasGroup == null)
+            {
+                inventoryCanvasGroup = inventoryPanel.AddComponent<CanvasGroup>();
+            }
+        }
+
+        if (inventoryPanelTransform == null)
+        {
+            inventoryPanelTransform = inventoryPanel.GetComponent<RectTransform>();
+        }
+
+        // Проверяем CanvasGroup на родителе
+        var parentCanvasGroup = GetComponent<CanvasGroup>();
+        if (parentCanvasGroup != null)
+        {
+            Debug.LogWarning("[InventoryToggleUI] CanvasGroup найден на родителе. Это может влиять на видимость!");
+            parentCanvasGroup.alpha = 1f;
+            parentCanvasGroup.interactable = true;
+            parentCanvasGroup.blocksRaycasts = true;
         }
     }
 
@@ -63,10 +84,7 @@ public class InventoryToggleUI : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.I) && !isAnimating)
         {
-            if (isOpen)
-                Close();
-            else
-                Open();
+            Toggle();
         }
 
         // Быстрое закрытие на Escape
@@ -76,21 +94,35 @@ public class InventoryToggleUI : MonoBehaviour
         }
     }
 
-    private void Open()
+    public void Toggle()
     {
-        if (isAnimating || inventoryPanel == null) return;
+        if (isOpen)
+            Close();
+        else
+            Open();
+    }
+
+    public void Open()
+    {
+        if (isAnimating || inventoryPanel == null || isOpen) return;
+
+        // Останавливаем предыдущую анимацию
+        KillCurrentTween();
 
         isAnimating = true;
         isOpen = true;
 
-        // Активируем ТОЛЬКО панель инвентаря
+        // Активируем панель
         inventoryPanel.SetActive(true);
 
         // Блокируем движение игрока
         var playerMovement = FindObjectOfType<PlayerMovement>();
-        playerMovement?.DisableMovement();
+        if (playerMovement != null)
+        {
+            playerMovement.DisableMovement();
+        }
 
-        // Создаем анимацию используя компоненты inventoryPanel
+        // Создаем анимацию открытия
         currentTween = DOTween.Sequence()
             .Append(inventoryCanvasGroup.DOFade(1f, animationDuration * 0.8f))
             .Join(inventoryPanelTransform.DOScale(1f, animationDuration).SetEase(openEase))
@@ -98,12 +130,16 @@ public class InventoryToggleUI : MonoBehaviour
                 isAnimating = false;
                 inventoryCanvasGroup.interactable = true;
                 inventoryCanvasGroup.blocksRaycasts = true;
-            });
+            })
+            .SetUpdate(true); // Работает даже при паузе
     }
 
-    private void Close()
+    public void Close()
     {
-        if (isAnimating || inventoryPanel == null) return;
+        if (isAnimating || inventoryPanel == null || !isOpen) return;
+
+        // Останавливаем предыдущую анимацию
+        KillCurrentTween();
 
         isAnimating = true;
         isOpen = false;
@@ -114,20 +150,37 @@ public class InventoryToggleUI : MonoBehaviour
 
         // Разблокируем движение игрока
         var playerMovement = FindObjectOfType<PlayerMovement>();
-        playerMovement?.EnableMovement();
+        if (playerMovement != null)
+        {
+            playerMovement.EnableMovement();
+        }
 
-        // Создаем анимацию
+        // Создаем анимацию закрытия
         currentTween = DOTween.Sequence()
             .Append(inventoryPanelTransform.DOScale(0f, animationDuration).SetEase(closeEase))
             .Join(inventoryCanvasGroup.DOFade(0f, animationDuration * 0.8f))
             .OnComplete(() => {
                 isAnimating = false;
                 inventoryPanel.SetActive(false);
-            });
+            })
+            .SetUpdate(true);
+    }
+
+    private void KillCurrentTween()
+    {
+        if (currentTween != null && currentTween.IsActive())
+        {
+            currentTween.Kill(false);
+            currentTween = null;
+        }
     }
 
     private void OnDestroy()
     {
-        currentTween?.Kill();
+        KillCurrentTween();
     }
+
+    // Публичные методы для получения состояния
+    public bool IsOpen => isOpen;
+    public bool IsAnimating => isAnimating;
 }

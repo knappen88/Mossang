@@ -12,11 +12,24 @@ public class DragDropManager : MonoBehaviour
         if (instance == null)
         {
             instance = this;
-            DontDestroyOnLoad(gameObject);
+            // Только делаем DontDestroyOnLoad если объект в корне иерархии
+            if (transform.parent == null)
+            {
+                DontDestroyOnLoad(gameObject);
+            }
         }
         else
         {
             Destroy(gameObject);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Очищаем статическую ссылку при уничтожении
+        if (instance == this)
+        {
+            instance = null;
         }
     }
 
@@ -47,5 +60,10 @@ public class DragDropManager : MonoBehaviour
     public static T GetDragSource<T>() where T : class
     {
         return instance?.dragSource as T;
+    }
+
+    public static bool IsDragging()
+    {
+        return instance != null && instance.draggedItem != null;
     }
 }
