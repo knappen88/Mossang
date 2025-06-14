@@ -12,6 +12,7 @@ public class HotbarSlotUI : MonoBehaviour,
 
     private InventoryItem currentItem;
     private int slotIndex;
+    private bool isSelected;
 
     private static HotbarSlotUI draggingSlot;
 
@@ -34,6 +35,16 @@ public class HotbarSlotUI : MonoBehaviour,
         {
             iconImage.sprite = item.itemData.icon;
             iconImage.enabled = true;
+
+            // Если слот выбран и мы установили новый предмет, активируем его
+            if (isSelected)
+            {
+                var hotbarManager = GetComponentInParent<HotbarManager>();
+                if (hotbarManager != null)
+                {
+                    hotbarManager.OnItemAddedToSlot(slotIndex);
+                }
+            }
         }
         else
         {
@@ -52,6 +63,7 @@ public class HotbarSlotUI : MonoBehaviour,
 
     public void SetSelected(bool selected)
     {
+        isSelected = selected;
         if (selectionOutline != null)
             selectionOutline.enabled = selected;
     }

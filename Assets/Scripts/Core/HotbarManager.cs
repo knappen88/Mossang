@@ -80,6 +80,13 @@ public class HotbarManager : MonoBehaviour
             if (slot.GetItem() == null)
             {
                 slot.SetItem(item.Clone());
+
+                // Если добавляем в активный слот, сразу активируем предмет
+                if (slots.IndexOf(slot) == activeSlotIndex)
+                {
+                    slot.UseItem(player);
+                }
+
                 return true;
             }
         }
@@ -110,4 +117,14 @@ public class HotbarManager : MonoBehaviour
     }
 
     public List<HotbarSlotUI> GetSlots() => slots;
+
+    // Метод для уведомления о том, что в слот был добавлен предмет
+    public void OnItemAddedToSlot(int slotIndex)
+    {
+        if (slotIndex == activeSlotIndex && slots[slotIndex].GetItem() != null)
+        {
+            // Если предмет добавлен в активный слот, активируем его
+            slots[slotIndex].UseItem(player);
+        }
+    }
 }
