@@ -24,5 +24,7 @@ MonoBehaviour:
   gatherableResources: 00000000
   gatherRadius: 2
   damagePerUse: 10
-  useSounds: []
-  hitSounds: []
+  useSounds:
+  - {fileID: 8300000, guid: 6a28a8cc70ab733488efebc6bcea0c93, type: 3}
+  hitSounds:
+  - {fileID: 8300000, guid: 7f6b295e2a4765043bb543616650e1fc, type: 3}
