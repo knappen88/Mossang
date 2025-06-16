@@ -281,18 +281,36 @@ namespace Player.Equipment
                 Collider2D[] hits = Physics2D.OverlapCircleAll(attackPos, attackRange);
 
                 Debug.Log($"[Tool Attack] Found {hits.Length} objects in range {attackRange}");
+                Debug.Log($"[Tool Attack] Using tool: {tool.itemName}, Type: {tool.toolType}");
+                Debug.Log($"[Tool Attack] Can gather: {string.Join(", ", tool.gatherableResources)}");
 
                 foreach (var hit in hits)
                 {
                     if (hit.gameObject == gameObject) continue;
 
-                    // Проверяем на HarvestableTree напрямую
-                    var tree = hit.GetComponent<HarvestableTree>();
-                    if (tree != null)
+                    Debug.Log($"[Tool Attack] Checking object: {hit.name}");
+
+                    // ВАЖНО: Проверяем универсальный интерфейс IHarvestable
+                    var harvestable = hit.GetComponent<IHarvestable>();
+                    if (harvestable != null && !harvestable.IsDestroyed)
                     {
-                        Debug.Log($"[Tool Attack] Found tree: {hit.name}");
-                        tree.Harvest(tool, gameObject);
-                        PlayToolHitSound(tool);
+                        Debug.Log($"[Tool Attack] Found IHarvestable on {hit.name}");
+                        Debug.Log($"[Tool Attack] Resource type: {harvestable.GetResourceType()}");
+                        Debug.Log($"[Tool Attack] Can harvest with {tool.toolType}: {harvestable.CanBeHarvestedWith(tool)}");
+
+                        // Вызываем метод сбора
+                        harvestable.Harvest(tool, gameObject);
+
+                        // Воспроизводим звук удара если был успешный сбор
+                        if (harvestable.CanBeHarvestedWith(tool))
+                        {
+                            PlayToolHitSound(tool);
+                            Debug.Log($"[Tool Attack] Successfully harvested {hit.name}!");
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log($"[Tool Attack] No IHarvestable interface on {hit.name} or already destroyed");
                     }
                 }
             }
@@ -314,6 +332,10 @@ namespace Player.Equipment
                     }
                 }
             }
+
+            // Отладочная визуализация (будет видна в Scene view)
+            Debug.DrawLine(attackPos + Vector2.left * attackRange, attackPos + Vector2.right * attackRange, Color.red, 1f);
+            Debug.DrawLine(attackPos + Vector2.up * attackRange, attackPos + Vector2.down * attackRange, Color.red, 1f);
         }
 
         private bool CanAttack()
@@ -402,6 +424,13 @@ namespace Player.Equipment
             bool flipX = false;
             bool flipY = false;
 
+            // Проверяем, является ли текущий предмет киркой
+            bool isPickaxe = false;
+            if (currentItemData is ToolData tool && tool.toolType == ToolType.Pickaxe)
+            {
+                isPickaxe = true;
+            }
+
             switch (currentDirection)
             {
                 case 0: // Front
@@ -420,7 +449,18 @@ namespace Player.Equipment
                     positionOffset = isFacingRight ? new Vector2(0.5f, 0f) : new Vector2(-0.5f, 0f);
                     rotationZ = 0f;
                     sortingOffset = isFacingRight ? 1 : -1;
-                    flipX = !rendererFlipX;
+
+                    // Специальная логика flip для кирки
+                    if (isPickaxe)
+                    {
+                        // Для кирки делаем обратный flip
+                        flipX = rendererFlipX; // Прямая зависимость, а не инвертированная
+                    }
+                    else
+                    {
+                        // Для остальных инструментов оставляем как было
+                        flipX = !rendererFlipX;
+                    }
                     break;
             }
 
@@ -432,6 +472,12 @@ namespace Player.Equipment
 
             weaponRenderer.sortingLayerName = armsRenderer.sortingLayerName;
             weaponRenderer.sortingOrder = armsRenderer.sortingOrder + sortingOffset;
+
+            // Отладочный вывод для проверки
+            if (isPickaxe && currentDirection == 2)
+            {
+                Debug.Log($"[Pickaxe Flip] Facing: {(isFacingRight ? "RIGHT" : "LEFT")}, Renderer FlipX: {rendererFlipX}, Weapon FlipX: {flipX}");
+            }
         }
 
         private IEnumerator HideWeaponAfterDelay(float delay)
@@ -482,12 +528,30 @@ namespace Player.Equipment
                 {
                     weaponAnimator.SetInteger("Direction", currentDirection);
 
+                    // ВАЖНО: Проверяем тип инструмента для правильной логики flip
                     if (currentDirection == 2 && weaponRenderer != null && trackingRenderer != null)
                     {
-                        bool expectedFlip = !trackingRenderer.flipX;
+                        bool isPickaxe = false;
+                        if (currentItemData is ToolData tool && tool.toolType == ToolType.Pickaxe)
+                        {
+                            isPickaxe = true;
+                        }
+
+                        bool expectedFlip;
+                        if (isPickaxe)
+                        {
+                            // Для кирки используем прямую логику
+                            expectedFlip = trackingRenderer.flipX;
+                        }
+                        else
+                        {
+                            // Для остальных инструментов инвертированная логика
+                            expectedFlip = !trackingRenderer.flipX;
+                        }
+
                         if (weaponRenderer.flipX != expectedFlip)
                         {
-                            Debug.LogWarning($"[FLIP OVERRIDE DETECTED] Animator is overriding flip! Forcing flip to {expectedFlip}");
+                            Debug.LogWarning($"[FLIP OVERRIDE DETECTED] Tool: {currentItemData?.itemName}, Animator is overriding flip! Forcing flip to {expectedFlip}");
                             weaponRenderer.flipX = expectedFlip;
                         }
                     }

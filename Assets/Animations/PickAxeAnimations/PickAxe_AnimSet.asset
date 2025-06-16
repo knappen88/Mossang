@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3615b88e9299c0145b13736fdc2f832d, type: 3}
+  m_Name: PickAxe_AnimSet
+  m_EditorClassIdentifier: 
+  bodyAttackFront: {fileID: 7400000, guid: 5f4dcd762e42cf0428f74dd70d37b765, type: 2}
+  bodyAttackSide: {fileID: 7400000, guid: 69027292847597b4290826b4af736710, type: 2}
+  bodyAttackBack: {fileID: 7400000, guid: 6a144370e3fe87641ae9ecb78f7cff99, type: 2}
+  armsAttackFront: {fileID: 7400000, guid: 8d323ff8434de7b4eb37099c2064e117, type: 2}
+  armsAttackSide: {fileID: 7400000, guid: eb18fe1307546914daf07a41ed5405f4, type: 2}
+  armsAttackBack: {fileID: 7400000, guid: 5a4fab29fed185543ba996ddd7787297, type: 2}
+  weaponAttackFront: {fileID: 7400000, guid: db9944fcc84854d4fbac9adca15ef6fe, type: 2}
+  weaponAttackSide: {fileID: 7400000, guid: 3568a1020233c004d809d7d225fdab62, type: 2}
+  weaponAttackBack: {fileID: 7400000, guid: 3b68b31db280c5545baf5aa05b45dc8f, type: 2}
+  attackDuration: 0.35
+  attackHitTimeNormalized: 0.282

@@ -22,7 +22,7 @@ MonoBehaviour:
   toolPrefab: {fileID: 2655186466142983573, guid: 5dad1e1ed948ca4439a2293e27dfaca7, type: 3}
   animationSet: {fileID: 11400000, guid: f70b373fea21e6e43bc5b65d8c3b559a, type: 2}
   gatherableResources: 00000000
-  gatherRadius: 2
+  gatherRadius: 0.8
   damagePerUse: 10
   useSounds:
   - {fileID: 8300000, guid: 6a28a8cc70ab733488efebc6bcea0c93, type: 3}

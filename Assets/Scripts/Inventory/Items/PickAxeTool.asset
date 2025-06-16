@@ -16,5 +16,18 @@ MonoBehaviour:
   icon: {fileID: 1110524412, guid: a0e99003f4748d94cafc10b3109b2644, type: 3}
   isStackable: 0
   maxStack: 1
-  useAnimation: {fileID: 0}
-  useDuration: 1
+  toolType: 1
+  useDuration: 0.35
+  efficiency: 1
+  toolPrefab: {fileID: 461166673189018704, guid: 489b870ecac385a479270ee199a604c6, type: 3}
+  animationSet: {fileID: 11400000, guid: 656e3427855ed4240a73a5449c0cdd0b, type: 2}
+  gatherableResources: 0100000002000000
+  gatherRadius: 0.8
+  damagePerUse: 25
+  useSounds:
+  - {fileID: 8300000, guid: 5f1c196c5dc9422439948016151cf416, type: 3}
+  hitSounds:
+  - {fileID: 8300000, guid: d3b1d6d1ec385074d95a8a38aee06f02, type: 3}
+  - {fileID: 8300000, guid: 995a475fe9b582d449b049a1ea91b55d, type: 3}
+  - {fileID: 8300000, guid: f6fcef6baee20134f96f75468a33f09a, type: 3}
+  - {fileID: 8300000, guid: c7adbaea4bde69d4eb37f0a246fa167b, type: 3}

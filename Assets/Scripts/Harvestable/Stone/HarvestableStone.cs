@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿// ===== Harvestable/Stone/HarvestableStone.cs =====
+using UnityEngine;
 using System.Collections;
 using DG.Tweening;
 using Items;
@@ -233,25 +234,20 @@ public class HarvestableStone : MonoBehaviour, IHarvestable
     {
         if (itemSpawner != null)
         {
-            // Используем встроенный ItemSpawner
-            itemSpawner.itemsToSpawn = new ItemSpawnData[]
+            // Спавним предметы по одному в случайных позициях
+            for (int i = 0; i < amount; i++)
             {
-                new ItemSpawnData { item = item, quantity = amount }
-            };
-            itemSpawner.SpawnItems();
+                Vector2 randomOffset = Random.insideUnitCircle * dropRadius;
+                Vector3 spawnPos = transform.position + new Vector3(randomOffset.x, randomOffset.y, 0);
+
+                // Используем публичный метод SpawnItem
+                itemSpawner.SpawnItem(item, 1, spawnPos);
+            }
         }
         else
         {
-            // Резервный метод спавна для 2D
-            for (int i = 0; i < amount; i++)
-            {
-                Vector2 randomDirection = Random.insideUnitCircle * dropRadius;
-                Vector3 spawnPos = transform.position + new Vector3(randomDirection.x, randomDirection.y, 0);
-
-                // Тут должен быть ваш метод создания предмета
-                // Например: ItemPickup.Create(item, spawnPos);
-                Debug.Log($"Spawning {item.itemName} at {spawnPos}");
-            }
+            // Резервный метод если нет ItemSpawner
+            Debug.LogWarning($"ItemSpawner not found on {gameObject.name}. Cannot spawn {item.itemName}");
         }
     }
 
@@ -279,3 +275,23 @@ public class HarvestableStone : MonoBehaviour, IHarvestable
         Gizmos.DrawWireSphere(transform.position, dropRadius);
     }
 }
+
+
+/*
+ эффекты:
+
+1. StoneHitEffect_2D:
+   - Particle System с Renderer Mode: Billboard
+   - Texture: маленькие осколки камня
+   - Simulation Space: World
+   - Emission: Burst 5-10 частиц
+   - Start Speed: 2-4
+   - Gravity Modifier: 0.5
+   - Start Lifetime: 0.5-1
+
+2. StoneDestroyEffect_2D:
+   - Более крупные осколки
+   - Burst 15-25 частиц
+   - Больший разброс скорости
+   - Можно добавить пыль
+*/
