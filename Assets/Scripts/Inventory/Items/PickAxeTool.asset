@@ -26,6 +26,7 @@ MonoBehaviour:
   damagePerUse: 25
   useSounds:
   - {fileID: 8300000, guid: 5f1c196c5dc9422439948016151cf416, type: 3}
+  - {fileID: 8300000, guid: 1781fb6d6d7b0984da77e11f7c6c802b, type: 3}
   hitSounds:
   - {fileID: 8300000, guid: d3b1d6d1ec385074d95a8a38aee06f02, type: 3}
   - {fileID: 8300000, guid: 995a475fe9b582d449b049a1ea91b55d, type: 3}
