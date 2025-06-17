@@ -52,6 +52,7 @@ public class ToolData : ItemData
 
 public enum ToolType
 {
+    Hand,
     Axe,
     Pickaxe,
     Shovel,

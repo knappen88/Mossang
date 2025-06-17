@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb93a735087d6a841aeb98e90430fb6d, type: 3}
+  m_Name: UnarmedTool
+  m_EditorClassIdentifier: 
+  itemName: 
+  icon: {fileID: 0}
+  isStackable: 0
+  maxStack: 1
+  toolType: 0
+  useDuration: 0.5
+  efficiency: 0.5
+  toolPrefab: {fileID: 0}
+  animationSet: {fileID: 0}
+  gatherableResources: 0000000003000000
+  gatherRadius: 1
+  damagePerUse: 5
+  useSounds: []
+  hitSounds: []
+  isDefaultUnarmed: 1
+  attackAnimationFront: {fileID: 7400000, guid: 8de57064307fb6f41b83e02f42cfe747, type: 2}
+  attackAnimationSide: {fileID: 7400000, guid: 4e7fd6b8bf2e0ce449cc49eb3f2db111, type: 2}
+  attackAnimationBack: {fileID: 7400000, guid: 890951ce8696d5c4dbe88a7b7028bf1a, type: 2}
+  armsAttackAnimationFront: {fileID: 7400000, guid: dd46d7205ee325f4095f7e2e076ffbdd, type: 2}
+  armsAttackAnimationSide: {fileID: 7400000, guid: d8ca3f1d4aff9144fa51fb5fcc090b26, type: 2}
+  armsAttackAnimationBack: {fileID: 7400000, guid: 2d41a97261eb9d74cb689a5ca65ab056, type: 2}
+  attackAnimationDuration: 0.5
+  attackHitTime: 0.2

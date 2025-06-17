@@ -101,7 +101,13 @@ public class HotbarManager : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.Alpha1 + i))
             {
                 SelectSlot(i);
-                slots[i].UseItem(player);
+
+                // Если в слоте есть предмет - используем его
+                if (slots[i].GetItem() != null)
+                {
+                    slots[i].UseItem(player);
+                }
+                // Если слот пустой - автоматически активируются кулаки через UnequipItem
             }
         }
     }
@@ -113,6 +119,16 @@ public class HotbarManager : MonoBehaviour
         for (int i = 0; i < slots.Count; i++)
         {
             slots[i].SetSelected(i == index);
+        }
+
+        // Если слот пустой, экипируем кулаки
+        if (slots[index].GetItem() == null)
+        {
+            var equipmentController = player.GetComponent<Player.Equipment.EquipmentController>();
+            if (equipmentController != null)
+            {
+                equipmentController.UnequipItem(); // Это автоматически экипирует unarmed
+            }
         }
     }
 

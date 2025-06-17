@@ -1,6 +1,7 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using System.Collections.Generic;
 using Combat.Data;
-using System.Collections;
+using UnityEngine;
 
 namespace Player.Equipment
 {
@@ -20,6 +21,10 @@ namespace Player.Equipment
         [Header("Attack Settings")]
         [SerializeField] private float attackCooldown = 0.5f;
         [SerializeField] private bool useWeaponAttackSpeed = true;
+
+        [Header("Unarmed Settings")]
+        [SerializeField] private UnarmedToolData unarmedTool; // Ссылка на ScriptableObject с настройками кулаков
+        private bool isUsingUnarmed = false;
 
         private ItemData currentItemData;
         private GameObject currentWeaponInstance;
@@ -48,7 +53,12 @@ namespace Player.Equipment
             {
                 Debug.LogWarning("[EquipmentController] No display config assigned, creating default!");
                 displayConfig = ScriptableObject.CreateInstance<WeaponDisplayConfiguration>();
-                displayConfig.SetDefaultValues();
+            }
+
+            // Если нет оружия, экипируем кулаки
+            if (currentItemData == null && unarmedTool != null)
+            {
+                EquipUnarmed();
             }
         }
 
@@ -104,15 +114,105 @@ namespace Player.Equipment
                 originalArmsController = armsAnimator.runtimeAnimatorController;
         }
 
+        private void EquipUnarmed()
+        {
+            Debug.Log("[EquipmentController] Equipping unarmed combat");
+
+            currentItemData = unarmedTool;
+            isUsingUnarmed = true;
+
+            // Применяем анимации для кулаков
+            ApplyUnarmedAnimations();
+
+            // Скрываем визуальное оружие
+            if (currentWeaponInstance != null)
+            {
+                currentWeaponInstance.SetActive(false);
+            }
+        }
+
+        private void ApplyUnarmedAnimations()
+        {
+            if (unarmedTool == null) return;
+
+            // Получаем текущее направление от PlayerAnimator
+            var playerAnimator = GetComponent<PlayerAnimator>();
+            int direction = playerAnimator != null ? playerAnimator.GetCurrentDirection() : 0;
+
+            // Применяем анимации атаки для тела
+            if (bodyAnimator != null)
+            {
+                var overrideController = new AnimatorOverrideController(originalBodyController);
+                var overrides = new List<KeyValuePair<AnimationClip, AnimationClip>>();
+
+                // Находим и заменяем анимации атаки
+                foreach (var clip in overrideController.animationClips)
+                {
+                    if (clip.name.Contains("Attack"))
+                    {
+                        AnimationClip newClip = unarmedTool.GetBodyAttackAnimation(direction);
+                        if (newClip != null)
+                        {
+                            overrides.Add(new KeyValuePair<AnimationClip, AnimationClip>(clip, newClip));
+                        }
+                    }
+                }
+
+                overrideController.ApplyOverrides(overrides);
+                bodyAnimator.runtimeAnimatorController = overrideController;
+            }
+
+            // Применяем анимации атаки для рук
+            if (armsAnimator != null)
+            {
+                var overrideController = new AnimatorOverrideController(originalArmsController);
+                var overrides = new List<KeyValuePair<AnimationClip, AnimationClip>>();
+
+                foreach (var clip in overrideController.animationClips)
+                {
+                    if (clip.name.Contains("Attack"))
+                    {
+                        AnimationClip newClip = unarmedTool.GetArmsAttackAnimation(direction);
+                        if (newClip != null)
+                        {
+                            overrides.Add(new KeyValuePair<AnimationClip, AnimationClip>(clip, newClip));
+                        }
+                    }
+                }
+
+                overrideController.ApplyOverrides(overrides);
+                armsAnimator.runtimeAnimatorController = overrideController;
+            }
+        }
+
         public void EquipItem(ItemData itemData)
         {
-            if (itemData == null) return;
+            if (itemData == null)
+            {
+                UnequipItem();
+                return;
+            }
 
-            UnequipCurrentItem();
+            // Если пытаемся экипировать кулаки когда они уже экипированы
+            if (itemData == unarmedTool && isUsingUnarmed)
+            {
+                Debug.Log("[EquipmentController] Unarmed already equipped");
+                return;
+            }
+
+            Debug.Log($"[EquipmentController] Equipping item: {itemData.itemName}");
+
+            // Сначала снимаем текущий предмет
+            if (currentItemData != null && currentItemData != unarmedTool)
+            {
+                UnequipCurrentItem();
+            }
+
             currentItemData = itemData;
+            isUsingUnarmed = false;
 
+            // Создаем визуальное представление оружия
             GameObject prefabToSpawn = GetWeaponPrefab(itemData);
-
             if (prefabToSpawn != null)
             {
                 currentWeaponInstance = Instantiate(prefabToSpawn, weaponSlot);
@@ -121,8 +221,8 @@ namespace Player.Equipment
                 weaponRenderer = currentWeaponInstance.GetComponent<SpriteRenderer>();
             }
 
+            // Применяем анимации персонажа
             ApplyCharacterAnimations();
-            Debug.Log($"Equipped: {itemData.itemName}");
         }
 
         private GameObject GetWeaponPrefab(ItemData itemData)
@@ -137,6 +237,14 @@ namespace Player.Equipment
 
         private void ApplyCharacterAnimations()
         {
+            // Для Unarmed используем специальный метод
+            if (isUsingUnarmed)
+            {
+                ApplyUnarmedAnimations();
+                return;
+            }
+
+            // Для остального оружия/инструментов
             WeaponAnimationSet animSet = GetAnimationSet();
             if (animSet == null) return;
 
@@ -171,10 +279,7 @@ namespace Player.Equipment
 
         public void UnequipCurrentItem()
         {
-            if (bodyAnimator != null)
-                bodyAnimator.runtimeAnimatorController = originalBodyController;
-            if (armsAnimator != null)
-                armsAnimator.runtimeAnimatorController = originalArmsController;
+            Debug.Log("[EquipmentController] Unequipping current item");
 
             if (currentWeaponInstance != null)
             {
@@ -191,6 +296,29 @@ namespace Player.Equipment
             }
 
             currentItemData = null;
+            isUsingUnarmed = false;
+
+            // Возвращаем оригинальные контроллеры
+            if (bodyAnimator != null && originalBodyController != null)
+            {
+                bodyAnimator.runtimeAnimatorController = originalBodyController;
+            }
+
+            if (armsAnimator != null && originalArmsController != null)
+            {
+                armsAnimator.runtimeAnimatorController = originalArmsController;
+            }
+        }
+
+        public void UnequipItem()
+        {
+            UnequipCurrentItem();
+
+            // Автоматически экипируем кулаки
+            if (unarmedTool != null)
+            {
+                EquipUnarmed();
+            }
         }
 
         public void Attack()
@@ -252,6 +380,12 @@ namespace Player.Equipment
 
         private void PerformAttackCheck()
         {
+            // Для unarmed обновляем анимации перед атакой
+            if (isUsingUnarmed)
+            {
+                ApplyUnarmedAnimations();
+            }
+
             // Определяем точку атаки
             Vector2 attackOffset = Vector2.zero;
             float attackRange = 1.5f;
@@ -494,8 +628,17 @@ namespace Player.Equipment
 
         private float GetAttackAnimationDuration()
         {
-            var animSet = GetAnimationSet();
-            return animSet != null ? animSet.attackDuration : 1f;
+            if (isUsingUnarmed && unarmedTool != null)
+            {
+                return unarmedTool.GetAttackDuration();
+            }
+
+            if (currentItemData is WeaponData weapon && weapon.animationSet != null)
+            {
+                return weapon.animationSet.attackDuration;
+            }
+
+            return 1f; // По умолчанию
         }
 
         public ItemData GetCurrentItem() => currentItemData;
