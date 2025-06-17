@@ -159,7 +159,7 @@ MonoBehaviour:
   destroyEffectPrefab: {fileID: 0}
   shakeIntensity: 0.05
   shakeVibrato: 20
-  damageColor: {r: 0.8, g: 0.8, b: 0.8, a: 1}
+  damageColor: {r: 1, g: 1, b: 1, a: 1}
   hitSounds: []
   breakSound: {fileID: 0}
   audioSource: {fileID: 0}
