@@ -34,6 +34,12 @@ namespace Building.UI
         [Header("Building Database")]
         [SerializeField] private List<BuildingData> allBuildings = new List<BuildingData>();
 
+        [Header("Panel Animation")]
+        [SerializeField] private RectTransform panelRect;
+        [SerializeField] private float showY = 10f;
+        [SerializeField] private float hideY = -250f;
+        [SerializeField] private float animationSpeed = 0.3f;
+
         private BuildingSystem buildingSystem;
         private Inventory playerInventory;
         private Dictionary<BuildingCategory, List<BuildingData>> categorizedBuildings;
@@ -217,9 +223,20 @@ namespace Building.UI
             CloseMenu();
         }
 
+        public void ToggleMenu()
+        {
+            if (menuPanel.activeSelf)
+                CloseMenu();
+            else
+                OpenMenu();
+        }
+
         public void OpenMenu()
         {
             menuPanel.SetActive(true);
+
+            panelRect.DOAnchorPosY(showY, animationSpeed)
+            .SetEase(Ease.OutQuad);
 
             canvasGroup.alpha = 0f;
             canvasGroup.DOFade(1f, animationDuration);
@@ -236,6 +253,10 @@ namespace Building.UI
         public void CloseMenu()
         {
             canvasGroup.DOFade(0f, animationDuration);
+
+            panelRect.DOAnchorPosY(hideY, animationSpeed)
+        .SetEase(Ease.InQuad)
+        .OnComplete(() => menuPanel.SetActive(false));
 
             menuPanel.transform.DOScale(Vector3.one * 0.8f, animationDuration)
                 .SetEase(Ease.InBack)
