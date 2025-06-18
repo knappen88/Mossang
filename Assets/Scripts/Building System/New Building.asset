@@ -20,7 +20,7 @@ MonoBehaviour:
   requiredLevel: 1
   resourceRequirements:
   - resource: {fileID: 11400000, guid: 34c73a8e3faa50246b6aa4bf0fa1a110, type: 2}
-    amount: 15
+    amount: 1
   requiredQuests: []
   category: 0
   buildTime: 5

@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 7340805616230708797}
   - component: {fileID: -1033037508512373318}
   - component: {fileID: -4538575493952364255}
+  - component: {fileID: -7787601211632119616}
   m_Layer: 0
   m_Name: TestBuilding
   m_TagString: Untagged
@@ -73,7 +74,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 15
   m_Sprite: {fileID: 21300000, guid: f4064b9b5d98656408e01f40e40d3674, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -130,3 +131,20 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1.6, y: 1.28}
   m_EdgeRadius: 0
+--- !u!114 &-7787601211632119616
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4131023074959074979}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82f7020e9dcd34043b330883e2ab0ba3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  interactionDistance: 3
+  hoverColor: {r: 1.1, g: 1.1, b: 1.1, a: 1}
+  selectedColor: {r: 1.2, g: 1.2, b: 1, a: 1}
+  selectionIndicator: {fileID: 5215267876459061876, guid: 7bb1f5f3b7a734a49ae55037cf32c4be, type: 3}
+  idleParticles: {fileID: 0}

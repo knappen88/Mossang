@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Collections.Generic;
 using DG.Tweening;
@@ -129,20 +129,34 @@ namespace Building
 
         private void UpdateGhostPosition()
         {
+            // Получаем позицию мыши
             Vector3 mouseWorldPos = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+
+            // ВАЖНО: обнуляем Z координату
             mouseWorldPos.z = 0;
 
+            // Преобразуем в позицию на сетке
             Vector3Int gridPos = mainTilemap.WorldToCell(mouseWorldPos);
 
+            // Получаем центр клетки
             Vector3 worldPos = mainTilemap.GetCellCenterWorld(gridPos);
 
+            // Корректировка для четных размеров зданий
             if (currentBuildingData.size.x % 2 == 0)
                 worldPos.x -= mainTilemap.cellSize.x / 2;
             if (currentBuildingData.size.y % 2 == 0)
                 worldPos.y -= mainTilemap.cellSize.y / 2;
 
+            // ВАЖНО: убедись что Z = 0
+            worldPos.z = 0;
+
+            // Применяем позицию
             currentGhost.transform.position = worldPos;
 
+            // Отладка
+            Debug.Log($"Mouse World Pos: {mouseWorldPos}, Grid Pos: {gridPos}, Final Pos: {worldPos}");
+
+            // Проверка валидности позиции
             if (gridPos != lastGridPosition)
             {
                 lastGridPosition = gridPos;

@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 7340805616230708797}
   - component: {fileID: -1033037508512373318}
   - component: {fileID: -4538575493952364255}
+  - component: {fileID: -3644596477413499880}
   m_Layer: 0
   m_Name: TestBuilding_Ghost
   m_TagString: Untagged
@@ -73,7 +74,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 15
   m_Sprite: {fileID: 21300000, guid: f4064b9b5d98656408e01f40e40d3674, type: 3}
   m_Color: {r: 0.46226418, g: 0.46226418, b: 0.46226418, a: 0.26666668}
   m_FlipX: 0
@@ -130,3 +131,15 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1.6, y: 1.28}
   m_EdgeRadius: 0
+--- !u!114 &-3644596477413499880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4131023074959074979}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb7bff31cef674f48a3708bd93d07325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
