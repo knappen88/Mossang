@@ -162,7 +162,7 @@ namespace Building
 
             infoText.text = "Строительство...";
 
-            CreateConstructionEffects();
+            //CreateConstructionEffects();
 
             transform.DOPunchScale(Vector3.one * 0.1f, 0.5f);
         }
@@ -210,27 +210,45 @@ namespace Building
 
         private void CreateConstructionEffects()
         {
+            // Создаем объект для частиц
             GameObject particlesGO = new GameObject("Construction Particles");
             particlesGO.transform.SetParent(transform);
             particlesGO.transform.localPosition = Vector3.zero;
 
+            // Добавляем компонент ParticleSystem
             constructionParticles = particlesGO.AddComponent<ParticleSystem>();
+
+            // ВАЖНО: Сначала останавливаем систему
+            constructionParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            // Теперь настраиваем параметры
             var main = constructionParticles.main;
-            main.duration = buildingData.buildTime;
+            main.duration = 5f;
             main.loop = true;
             main.startLifetime = 1f;
             main.startSpeed = 2f;
             main.maxParticles = 50;
+            main.startSize = 0.1f;
+            main.startColor = Color.yellow;
 
             var emission = constructionParticles.emission;
             emission.rateOverTime = 10;
 
             var shape = constructionParticles.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(buildingData.size.x, buildingData.size.y, 1);
+            shape.scale = new Vector3(buildingData.size.x, buildingData.size.y, 0.1f);
 
+            var velocityOverLifetime = constructionParticles.velocityOverLifetime;
+            velocityOverLifetime.enabled = true;
+            velocityOverLifetime.space = ParticleSystemSimulationSpace.Local;
+            velocityOverLifetime.y = new ParticleSystem.MinMaxCurve(1f, 2f);
+
+            // Настраиваем рендерер
             var renderer = constructionParticles.GetComponent<ParticleSystemRenderer>();
             renderer.material = new Material(Shader.Find("Sprites/Default"));
+
+            // Запускаем систему частиц
+            constructionParticles.Play();
         }
 
         private void CompleteConstruction()
