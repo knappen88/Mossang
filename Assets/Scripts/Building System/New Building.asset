@@ -16,7 +16,7 @@ MonoBehaviour:
   description: Test
   icon: {fileID: 21300000, guid: f4064b9b5d98656408e01f40e40d3674, type: 3}
   prefab: {fileID: 4131023074959074979, guid: b2f913a356b9ea945bc94a9f079482f0, type: 3}
-  size: {x: 3, y: 3}
+  size: {x: 1, y: 1}
   requiredLevel: 1
   resourceRequirements:
   - resource: {fileID: 11400000, guid: 34c73a8e3faa50246b6aa4bf0fa1a110, type: 2}

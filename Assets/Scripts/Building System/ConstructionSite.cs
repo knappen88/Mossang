@@ -146,6 +146,17 @@ namespace Building
             {
                 progressBar.gameObject.SetActive(false);
             }
+
+            // Отладка позиционирования
+            Debug.Log($"[ConstructionSite] Building position: {transform.position}");
+            Debug.Log($"[ConstructionSite] Building size: {buildingData.size}");
+            Debug.Log($"[ConstructionSite] UI local position: {uiInstance.transform.localPosition}");
+            Debug.Log($"[ConstructionSite] UI world position: {uiInstance.transform.position}");
+            Debug.Log($"[ConstructionSite] UI scale: {uiInstance.transform.localScale}");
+
+            // Визуальная отладка
+            Debug.DrawRay(transform.position, Vector3.up * buildingData.size.y, Color.yellow, 5f);
+            Debug.DrawRay(uiInstance.transform.position, Vector3.up * 0.5f, Color.green, 5f);
         }
 
         private void UpdateUIText(string text, bool isError = false)
