@@ -38522,14 +38522,27 @@ MonoBehaviour:
   mainCamera: {fileID: 519420031}
   buildingMenu: {fileID: 2027591846}
   resourceDisplayPrefab: {fileID: 5215267876459061876, guid: 7bb1f5f3b7a734a49ae55037cf32c4be, type: 3}
+  constructionUIPrefab: {fileID: 8355205501828558702, guid: 2e12794a0ce00ce448b8286c34d9b03e, type: 3}
   buildMenuKey: 98
   confirmPlacementKey: 102
   cancelPlacementKey: 27
   rotateKey: 114
   ghostMaterial: {fileID: 2100000, guid: c6422b0e95c1ed740954e27983115abd, type: 2}
-  buildingLayer:
-    serializedVersion: 2
-    m_Bits: 4294967295
+  ghostValidAlpha: 0.6
+  ghostInvalidAlpha: 0.3
+  validPlacementTint: {r: 0, g: 1, b: 0, a: 1}
+  invalidPlacementTint: {r: 1, g: 0, b: 0, a: 1}
+  showGridOnPlacement: 1
+  gridColor: {r: 1, g: 1, b: 1, a: 0.3}
+  gridLineWidth: 0.02
+  gridRadius: 10
+  gridMaterial: {fileID: 0}
+  gridFadeInDuration: 0.5
+  gridFadeOutDuration: 0.3
+  placementSound: {fileID: 0}
+  rotateSound: {fileID: 0}
+  cancelSound: {fileID: 0}
+  errorSound: {fileID: 0}
 --- !u!4 &1960861318
 Transform:
   m_ObjectHideFlags: 0

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using DG.Tweening;
 
@@ -34,7 +34,9 @@ namespace Building
 
             for (int i = 0; i < spriteRenderers.Length; i++)
             {
+                // Сохраняем текущий цвет как оригинальный
                 originalColors[i] = spriteRenderers[i].color;
+                // НЕ трогаем материал!
             }
 
             CreateBuildingEffects();
@@ -112,51 +114,73 @@ namespace Building
 
         private void OnMouseEnter()
         {
-            if (EventSystem.current.IsPointerOverGameObject()) return;
+            // Проверяем что контроллер инициализирован
+            if (buildingData == null || spriteRenderers == null) return;
 
-            SetHighlight(true);
+            // Игнорируем если это ghost
+            if (GetComponent<BuildingGhost>() != null) return;
+
             OnBuildingHovered?.Invoke(this);
+            SetHighlight(true);
         }
 
         private void OnMouseExit()
         {
+            // Проверяем что контроллер инициализирован
+            if (buildingData == null || spriteRenderers == null) return;
+
+            // Игнорируем если это ghost
+            if (GetComponent<BuildingGhost>() != null) return;
+
             if (!isSelected)
                 SetHighlight(false);
         }
 
         private void OnMouseDown()
         {
-            if (EventSystem.current.IsPointerOverGameObject()) return;
+            // Проверяем что контроллер инициализирован
+            if (buildingData == null) return;
+
+            // Игнорируем если это ghost или EventSystem блокирует
+            if (GetComponent<BuildingGhost>() != null) return;
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
             GameObject player = GameObject.FindWithTag("Player");
-            if (player != null)
-            {
-                float distance = Vector2.Distance(transform.position, player.transform.position);
-                if (distance <= interactionDistance)
-                {
-                    OnBuildingClicked?.Invoke(this);
+            if (player == null) return;
 
-                    transform.DOPunchScale(Vector3.one * 0.1f, 0.2f);
-                }
-                else
-                {
-                    ShowTooFarEffect();
-                }
+            float distance = Vector2.Distance(transform.position, player.transform.position);
+            if (distance > interactionDistance)
+            {
+                ShowTooFarEffect();
+                return;
             }
+
+            OnBuildingClicked?.Invoke(this);
+            OpenBuildingMenu();
         }
 
-        private void SetHighlight(bool highlight)
+        public void SetHighlight(bool highlight)
         {
+            // Добавляем проверку на null
+            if (spriteRenderers == null || originalColors == null) return;
+            if (originalColors.Length == 0) return;
+
             Color targetColor = highlight ? hoverColor : Color.white;
 
             for (int i = 0; i < spriteRenderers.Length; i++)
             {
-                spriteRenderers[i].DOColor(originalColors[i] * targetColor, 0.2f);
+                if (i < originalColors.Length && spriteRenderers[i] != null)
+                {
+                    spriteRenderers[i].DOColor(originalColors[i] * targetColor, 0.2f);
+                }
             }
         }
 
         public void SetSelected(bool selected)
         {
+            // Добавляем проверку на null
+            if (spriteRenderers == null || originalColors == null) return;
+
             isSelected = selected;
 
             if (selectionIndicator != null)
@@ -167,7 +191,10 @@ namespace Building
             Color targetColor = selected ? selectedColor : Color.white;
             for (int i = 0; i < spriteRenderers.Length; i++)
             {
-                spriteRenderers[i].DOColor(originalColors[i] * targetColor, 0.2f);
+                if (i < originalColors.Length && spriteRenderers[i] != null)
+                {
+                    spriteRenderers[i].DOColor(originalColors[i] * targetColor, 0.2f);
+                }
             }
         }
 

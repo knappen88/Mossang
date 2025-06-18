@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
@@ -37,14 +37,17 @@ namespace Building
             worldCanvas.sortingLayerName = "UI";
             worldCanvas.sortingOrder = 100;
 
+            // ВАЖНО: Правильный масштаб
+            RectTransform rt = canvasGO.GetComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(2, 1);
+            rt.localScale = Vector3.one * 0.01f; // Масштаб для мира
+
             CanvasScaler scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.dynamicPixelsPerUnit = 100;
 
-            RectTransform rt = canvasGO.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(200, 100);
-
-            float yOffset = (buildingData.size.y * 0.5f) + 1f;
-            canvasGO.transform.localPosition = new Vector3(0, yOffset, 0);
+            // Позиция над зданием
+            float yOffset = (buildingData.size.y * 0.5f) + 0.5f;
+            canvasGO.transform.localPosition = new Vector3(0, yOffset, -0.1f);
         }
 
         private void CreateResourceDisplay()
