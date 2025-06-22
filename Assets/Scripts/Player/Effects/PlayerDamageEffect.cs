@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using DG.Tweening;
+#if UNITY_EDITOR
 using UnityEditor.Rendering.LookDev;
+#endif
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerHealth))]
