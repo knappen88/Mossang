@@ -1,6 +1,8 @@
 using BuildingSystem.Core.Interfaces;
 using BuildingSystem.Core.Events;
+using BuildingSystem.Config;
 using UnityEngine;
+
 namespace BuildingSystem.Core.StateMachine
 {
     public class BuildingSystemContext

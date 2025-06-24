@@ -6,8 +6,8 @@ namespace BuildingSystem.Core.StateMachine
 {
     public class StateMachine<TStateType> where TStateType : Enum
     {
+        private readonly Dictionary<TStateType, IState> states = new Dictionary<TStateType, IState>();
         private IState currentState;
-        private Dictionary<TStateType, IState> states = new Dictionary<TStateType, IState>();
         private TStateType currentStateType;
 
         public TStateType CurrentStateType => currentStateType;
@@ -17,27 +17,30 @@ namespace BuildingSystem.Core.StateMachine
         {
             if (states.ContainsKey(stateType))
             {
-                Debug.LogWarning($"State {stateType} already registered. Overwriting.");
+                Debug.LogWarning($"State {stateType} is already registered!");
+                return;
             }
+
             states[stateType] = state;
         }
 
         public void ChangeState(TStateType newStateType)
         {
-            if (!states.ContainsKey(newStateType))
+            if (!states.TryGetValue(newStateType, out var newState))
             {
-                Debug.LogError($"State {newStateType} not registered!");
+                Debug.LogError($"State {newStateType} is not registered!");
                 return;
             }
 
-            if (currentState != null)
-            {
-                currentState.Exit();
-            }
+            // Exit current state
+            currentState?.Exit();
 
+            // Change state
             currentStateType = newStateType;
-            currentState = states[newStateType];
-            currentState.Enter();
+            currentState = newState;
+
+            // Enter new state
+            currentState?.Enter();
         }
 
         public void Update()
@@ -49,5 +52,39 @@ namespace BuildingSystem.Core.StateMachine
         {
             currentState?.HandleInput();
         }
+    }
+
+    // IState.cs
+    public interface IState
+    {
+        void Enter();
+        void Exit();
+        void Update();
+        void HandleInput();
+    }
+
+    // BuildingSystemStateBase.cs
+    public abstract class BuildingSystemStateBase : IState
+    {
+        protected readonly BuildingSystemContext context;
+
+        protected BuildingSystemStateBase(BuildingSystemContext context)
+        {
+            this.context = context;
+        }
+
+        public abstract void Enter();
+        public abstract void Exit();
+        public abstract void Update();
+        public abstract void HandleInput();
+    }
+
+    // BuildingSystemState.cs
+    public enum BuildingSystemState
+    {
+        Idle,
+        PlacingBuilding,
+        ConstructingBuilding,
+        DemolishingBuilding
     }
 }

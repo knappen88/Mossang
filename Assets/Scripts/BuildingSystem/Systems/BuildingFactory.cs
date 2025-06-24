@@ -1,6 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
+using BuildingSystem.Core.Interfaces;
+using BuildingSystem.Config;
+using BuildingSystem.Controllers;
+using BuildingSystem.Components;
+
 namespace BuildingSystem.Systems
 {
     public class BuildingFactory : IBuildingFactory
@@ -10,18 +15,19 @@ namespace BuildingSystem.Systems
         private readonly Dictionary<string, ObjectPool<GameObject>> buildingPools;
         private readonly ObjectPool<GameObject> ghostPool;
 
-        public BuildingFactory(Transform buildingContainer, BuildingSystemConfig config)
+        public BuildingFactory(Transform container, BuildingSystemConfig systemConfig)
         {
-            this.buildingContainer = buildingContainer;
-            this.config = config;
-            this.buildingPools = new Dictionary<string, ObjectPool<GameObject>>();
+            buildingContainer = container;
+            config = systemConfig;
+            buildingPools = new Dictionary<string, ObjectPool<GameObject>>();
 
             // Create ghost pool
             ghostPool = new ObjectPool<GameObject>(
                 createFunc: CreateGhostObject,
-                actionOnGet: OnGetGhost,
-                actionOnRelease: OnReleaseGhost,
-                actionOnDestroy: OnDestroyObject,
+                actionOnGet: (obj) => obj.SetActive(true),
+                actionOnRelease: (obj) => obj.SetActive(false),
+                actionOnDestroy: (obj) => Object.Destroy(obj),
+                collectionCheck: false,
                 defaultCapacity: 5,
                 maxSize: 10
             );
@@ -29,18 +35,17 @@ namespace BuildingSystem.Systems
 
         public GameObject CreateBuilding(BuildingData data, Vector3 position, Quaternion rotation)
         {
-            // Get from pool if available
+            // Get or create pool for this building type
             if (!buildingPools.ContainsKey(data.Id))
             {
-                buildingPools[data.Id] = CreateBuildingPool(data);
+                CreateBuildingPool(data);
             }
 
             var building = buildingPools[data.Id].Get();
             building.transform.position = position;
             building.transform.rotation = rotation;
-            building.name = $"{data.BuildingName}_{System.Guid.NewGuid().ToString().Substring(0, 8)}";
 
-            // Initialize building controller
+            // Setup building controller
             var controller = building.GetComponent<BuildingController>();
             if (controller == null)
             {
@@ -56,7 +61,7 @@ namespace BuildingSystem.Systems
             var ghost = ghostPool.Get();
 
             // Replace with building model
-            var model = Object.Instantiate(data.GhostPrefab, ghost.transform);
+            var model = Object.Instantiate(data.GhostPrefab ?? data.Prefab, ghost.transform);
             model.transform.localPosition = Vector3.zero;
             model.transform.localRotation = Quaternion.identity;
 
@@ -99,22 +104,25 @@ namespace BuildingSystem.Systems
             ghostPool.Release(ghost);
         }
 
-        private ObjectPool<GameObject> CreateBuildingPool(BuildingData data)
+        private void CreateBuildingPool(BuildingData data)
         {
-            return new ObjectPool<GameObject>(
+            var pool = new ObjectPool<GameObject>(
                 createFunc: () => CreateBuildingObject(data),
-                actionOnGet: obj => OnGetBuilding(obj),
-                actionOnRelease: obj => OnReleaseBuilding(obj),
-                actionOnDestroy: obj => OnDestroyObject(obj),
-                defaultCapacity: 5,
-                maxSize: 20
+                actionOnGet: (obj) => obj.SetActive(true),
+                actionOnRelease: (obj) => obj.SetActive(false),
+                actionOnDestroy: (obj) => Object.Destroy(obj),
+                collectionCheck: false,
+                defaultCapacity: config.DefaultPoolSize,
+                maxSize: config.MaxPoolSize
             );
+
+            buildingPools[data.Id] = pool;
         }
 
         private GameObject CreateBuildingObject(BuildingData data)
         {
             var building = Object.Instantiate(data.Prefab, buildingContainer);
-            building.SetActive(false);
+            building.name = $"{data.BuildingName}_{System.Guid.NewGuid()}";
             return building;
         }
 
@@ -122,38 +130,7 @@ namespace BuildingSystem.Systems
         {
             var ghost = new GameObject("BuildingGhost");
             ghost.transform.SetParent(buildingContainer);
-            ghost.SetActive(false);
             return ghost;
-        }
-
-        private void OnGetBuilding(GameObject building)
-        {
-            building.SetActive(true);
-        }
-
-        private void OnReleaseBuilding(GameObject building)
-        {
-            building.SetActive(false);
-            building.transform.position = Vector3.zero;
-            building.transform.rotation = Quaternion.identity;
-        }
-
-        private void OnGetGhost(GameObject ghost)
-        {
-            ghost.SetActive(true);
-        }
-
-        private void OnReleaseGhost(GameObject ghost)
-        {
-            ghost.SetActive(false);
-            ghost.transform.position = Vector3.zero;
-            ghost.transform.rotation = Quaternion.identity;
-        }
-
-        private void OnDestroyObject(GameObject obj)
-        {
-            if (obj != null)
-                Object.Destroy(obj);
         }
     }
 }

@@ -4,6 +4,7 @@ using BuildingSystem.Core.StateMachine;
 using BuildingSystem.Core.Events;
 using BuildingSystem.Systems;
 using BuildingSystem.Config;
+using BuildingSystem.Core;
 
 namespace BuildingSystem.Controllers
 {
@@ -59,12 +60,16 @@ namespace BuildingSystem.Controllers
                 else
                 {
                     // Create adapter for legacy inventory
-                    resourceManager = new InventoryAdapter(player.GetComponent<Inventory>());
+                    var legacyInventory = player.GetComponent<Inventory>();
+                    if (legacyInventory != null)
+                    {
+                        resourceManager = new InventoryAdapter(legacyInventory);
+                    }
                 }
             }
 
             placementValidator = new PlacementValidator(gridManager, gridConfig, resourceManager);
-            constructionManager = new ConstructionManager(eventChannel, systemConfig);
+            constructionManager = new ConstructionManager(eventChannel, systemConfig, resourceManager);
             inputHandler = new BuildingInputHandler(this, systemConfig);
 
             // Setup camera if not assigned
@@ -182,4 +187,10 @@ namespace BuildingSystem.Controllers
         public BuildingSystemState CurrentState => stateMachine.CurrentStateType;
         public bool IsPlacingBuilding => CurrentState == BuildingSystemState.PlacingBuilding;
         public BuildingData CurrentBuildingData => context.CurrentBuildingData;
+
+        // Public accessors
+        public IResourceManager GetResourceManager() => resourceManager;
+        public IGridManager GetGridManager() => gridManager;
+        public IBuildingRepository GetBuildingRepository() => buildingRepository;
     }
+}

@@ -1,5 +1,5 @@
-using BuildingSystem.Core.StateMachine;
 using UnityEngine;
+
 namespace BuildingSystem.Core.StateMachine
 {
     public class IdleState : BuildingSystemStateBase
@@ -8,38 +8,30 @@ namespace BuildingSystem.Core.StateMachine
 
         public override void Enter()
         {
-            // Clean up any lingering state
-            if (context.CurrentGhost != null)
-            {
-                context.BuildingFactory.RecycleGhost(context.CurrentGhost);
-                context.CurrentGhost = null;
-            }
+            // Clear any temporary data
+            context.CurrentBuildingData = null;
+            context.CurrentGhost = null;
+            context.CurrentGridPosition = Vector3Int.zero;
+            context.CurrentRotation = 0;
         }
 
         public override void Exit() { }
 
-        public override void Update() { }
-
-        public override void HandleInput()
+        public override void Update()
         {
-            // Handle building selection, menu opening, etc.
-            if (Input.GetMouseButtonDown(0))
+            // Update construction progress for all buildings
+            foreach (var building in context.BuildingRepository.GetAllBuildings())
             {
-                HandleBuildingSelection();
+                if (context.ConstructionManager.IsUnderConstruction(building))
+                {
+                    context.ConstructionManager.UpdateConstruction(building, Time.deltaTime);
+                }
             }
         }
 
-        private void HandleBuildingSelection()
+        public override void HandleInput()
         {
-            var ray = context.MainCamera.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit))
-            {
-                var building = hit.collider.GetComponent<BuildingController>();
-                if (building != null)
-                {
-                    context.EventChannel.Publish(new BuildingSelectedEvent(building.gameObject));
-                }
-            }
+            // Input is handled by BuildingInputHandler in idle state
         }
     }
 }

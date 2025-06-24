@@ -1,5 +1,6 @@
 using BuildingSystem.Core.Events;
 using BuildingSystem.Core.Interfaces;
+using BuildingSystem.Core;
 using UnityEngine;
 
 public struct BuildingPlacementStartedEvent : IBuildingEvent
@@ -100,5 +101,4 @@ public struct PlacementValidationFailedEvent : IBuildingEvent
         ErrorType = errorType;
         Message = message;
     }
-}
 }

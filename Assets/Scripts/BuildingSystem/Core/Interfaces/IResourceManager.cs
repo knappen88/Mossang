@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BuildingSystem.Core;
 
 namespace BuildingSystem.Core.Interfaces
 {

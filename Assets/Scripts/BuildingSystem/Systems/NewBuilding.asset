@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 010aa0aa79217c14da2ba2bed2ec5da4, type: 3}
+  m_Name: NewBuilding
+  m_EditorClassIdentifier: 
+  id: b4fd0cb3-a718-4a57-831c-db0c64d9d984
+  buildingName: New Building
+  description: Building description
+  icon: {fileID: 0}
+  prefab: {fileID: 0}
+  ghostPrefab: {fileID: 0}
+  demolishEffectPrefab: {fileID: 0}
+  size: {x: 1, y: 1}
+  canRotate: 1
+  placementMode: 0
+  requiredLevel: 1
+  resourceRequirements: []
+  requiredQuestIds: []
+  requiredBuildingIds: []
+  category: 1
+  constructionTime: 5
+  maxHealth: 100
+  isDestructible: 1
+  resourceProduction: []
+  productionInterval: 60
+  resourceStorage: []

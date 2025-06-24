@@ -80,3 +80,4 @@ namespace BuildingSystem.Systems
             return occupiedCells.TryGetValue(gridPosition, out var building) ? building : null;
         }
     }
+}

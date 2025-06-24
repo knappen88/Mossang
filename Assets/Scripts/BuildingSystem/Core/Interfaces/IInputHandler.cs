@@ -1,11 +1,10 @@
-using UnityEngine;
-
 namespace BuildingSystem.Core.Interfaces
 {
     public interface IInputHandler
-{
-    void Enable();
-    void Disable();
-    bool IsEnabled { get; }
-}
+    {
+        void HandleInput();
+        bool IsEnabled { get; }
+        void Enable();
+        void Disable();
     }
+}

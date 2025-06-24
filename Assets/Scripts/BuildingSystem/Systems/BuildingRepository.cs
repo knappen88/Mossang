@@ -1,92 +1,99 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using BuildingSystem.Core.Interfaces;
+using BuildingSystem.Core;
+
 namespace BuildingSystem.Systems
 {
     public class BuildingRepository : IBuildingRepository
-{
-    private readonly Dictionary<Guid, BuildingInfo> buildings = new Dictionary<Guid, BuildingInfo>();
-    private readonly Dictionary<GameObject, Guid> gameObjectToId = new Dictionary<GameObject, Guid>();
-
-    public void RegisterBuilding(GameObject building, BuildingData data, Vector3Int gridPosition)
     {
-        var id = Guid.NewGuid();
-        var info = new BuildingInfo
-        {
-            Id = id,
-            Data = data,
-            GridPosition = gridPosition,
-            State = BuildingState.UnderConstruction,
-            ConstructionProgress = 0f
-        };
+        private readonly Dictionary<GameObject, BuildingInfo> buildings = new Dictionary<GameObject, BuildingInfo>();
+        private readonly Dictionary<string, List<GameObject>> buildingsByType = new Dictionary<string, List<GameObject>>();
 
-        buildings[id] = info;
-        gameObjectToId[building] = id;
-    }
-
-    public void UnregisterBuilding(GameObject building)
-    {
-        if (gameObjectToId.TryGetValue(building, out var id))
+        public void RegisterBuilding(GameObject building, BuildingData data, Vector3Int gridPosition)
         {
-            buildings.Remove(id);
-            gameObjectToId.Remove(building);
+            if (buildings.ContainsKey(building))
+            {
+                Debug.LogWarning($"Building {building.name} is already registered!");
+                return;
+            }
+
+            var info = new BuildingInfo
+            {
+                Data = data,
+                GridPosition = gridPosition,
+                State = BuildingState.UnderConstruction
+            };
+
+            buildings[building] = info;
+
+            // Add to type dictionary
+            if (!buildingsByType.ContainsKey(data.Id))
+            {
+                buildingsByType[data.Id] = new List<GameObject>();
+            }
+            buildingsByType[data.Id].Add(building);
+        }
+
+        public void UnregisterBuilding(GameObject building)
+        {
+            if (!buildings.TryGetValue(building, out var info))
+                return;
+
+            buildings.Remove(building);
+
+            // Remove from type dictionary
+            if (buildingsByType.TryGetValue(info.Data.Id, out var list))
+            {
+                list.Remove(building);
+                if (list.Count == 0)
+                {
+                    buildingsByType.Remove(info.Data.Id);
+                }
+            }
+        }
+
+        public bool TryGetBuildingInfo(GameObject building, out BuildingInfo info)
+        {
+            return buildings.TryGetValue(building, out info);
+        }
+
+        public IEnumerable<GameObject> GetAllBuildings()
+        {
+            return buildings.Keys;
+        }
+
+        public IEnumerable<GameObject> GetBuildingsOfType(string buildingId)
+        {
+            if (buildingsByType.TryGetValue(buildingId, out var list))
+            {
+                return list;
+            }
+            return Enumerable.Empty<GameObject>();
+        }
+
+        public void UpdateBuildingState(GameObject building, BuildingState newState)
+        {
+            if (buildings.TryGetValue(building, out var info))
+            {
+                info.State = newState;
+                buildings[building] = info;
+            }
+        }
+
+        public int GetBuildingCount(string buildingId)
+        {
+            if (buildingsByType.TryGetValue(buildingId, out var list))
+            {
+                return list.Count;
+            }
+            return 0;
+        }
+
+        public IEnumerable<string> GetOwnedBuildingIds()
+        {
+            return buildingsByType.Keys;
         }
     }
-
-    public GameObject GetBuilding(Guid id)
-    {
-        var kvp = gameObjectToId.FirstOrDefault(x => x.Value == id);
-        return kvp.Key;
-    }
-
-    public IEnumerable<GameObject> GetAllBuildings()
-    {
-        return gameObjectToId.Keys;
-    }
-
-    public IEnumerable<GameObject> GetBuildingsByCategory(BuildingCategory category)
-    {
-        return gameObjectToId
-            .Where(kvp => buildings[kvp.Value].Data.Category == category)
-            .Select(kvp => kvp.Key);
-    }
-
-    public BuildingData GetBuildingData(GameObject building)
-    {
-        if (gameObjectToId.TryGetValue(building, out var id) && buildings.TryGetValue(id, out var info))
-        {
-            return info.Data;
-        }
-        return null;
-    }
-
-    public bool TryGetBuildingInfo(GameObject building, out BuildingInfo info)
-    {
-        if (gameObjectToId.TryGetValue(building, out var id))
-        {
-            return buildings.TryGetValue(id, out info);
-        }
-        info = default;
-        return false;
-    }
-
-    public void UpdateBuildingState(GameObject building, BuildingState newState)
-    {
-        if (gameObjectToId.TryGetValue(building, out var id) && buildings.TryGetValue(id, out var info))
-        {
-            info.State = newState;
-            buildings[id] = info;
-        }
-    }
-
-    public void UpdateConstructionProgress(GameObject building, float progress)
-    {
-        if (gameObjectToId.TryGetValue(building, out var id) && buildings.TryGetValue(id, out var info))
-        {
-            info.ConstructionProgress = Mathf.Clamp01(progress);
-            buildings[id] = info;
-        }
-    }
-}
 }

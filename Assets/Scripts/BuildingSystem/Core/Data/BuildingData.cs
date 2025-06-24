@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using BuildingSystem.Core;
 
 [CreateAssetMenu(fileName = "NewBuilding", menuName = "Building System/Building Data")]
 public class BuildingData : ScriptableObject
@@ -105,19 +107,6 @@ public enum BuildingCategory
 }
 
 [System.Serializable]
-public class ResourceRequirement
-{
-    public string resourceId;
-    public int amount;
-
-    public ResourceRequirement(string id, int amt)
-    {
-        resourceId = id;
-        amount = amt;
-    }
-}
-
-[System.Serializable]
 public class ResourceProduction
 {
     public string resourceId;
@@ -130,5 +119,4 @@ public class ResourceStorage
 {
     public string resourceId;
     public int capacity;
-}
 }

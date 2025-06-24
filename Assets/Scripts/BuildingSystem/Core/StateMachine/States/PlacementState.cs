@@ -1,12 +1,13 @@
 using UnityEngine;
-
+using BuildingSystem.Core.Events;
+using BuildingSystem.Components;
+using BuildingSystem.Controllers;
+using BuildingSystem.Core;
 
 namespace BuildingSystem.Core.StateMachine
 {
     public class PlacementState : BuildingSystemStateBase
     {
-        private GridVisualizerComponent gridVisualizer;
-
         public PlacementState(BuildingSystemContext context) : base(context) { }
 
         public override void Enter()
@@ -165,13 +166,17 @@ namespace BuildingSystem.Core.StateMachine
 
         private void ShowGrid()
         {
-            // Implementation depends on your grid visualization system
+            // Simple grid visualization
+            Debug.Log("Grid visualization enabled");
+            // You can implement actual grid visualization here
+            // For example, spawn grid cell prefabs or enable a grid overlay
         }
 
         private void HideGrid()
         {
-            // Implementation depends on your grid visualization system
+            // Hide grid visualization
+            Debug.Log("Grid visualization disabled");
+            // Disable grid overlay or destroy grid cell objects
         }
     }
-}
 }

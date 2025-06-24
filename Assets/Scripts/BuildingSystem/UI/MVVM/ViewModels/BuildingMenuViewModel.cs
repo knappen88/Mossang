@@ -6,6 +6,7 @@ using UnityEngine;
 using BuildingSystem.Core.Events;
 using BuildingSystem.Core.Interfaces;
 using BuildingSystem.Config;
+using BuildingSystem.Core;
 
 namespace BuildingSystem.UI.MVVM.ViewModels
 {
@@ -173,3 +174,4 @@ namespace BuildingSystem.UI.MVVM.ViewModels
         public int Available { get; set; }
         public bool HasEnough { get; set; }
     }
+}

@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using DG.Tweening;
 using BuildingSystem.Config;
+using BuildingSystem.Core.Events;
+using BuildingSystem.Components;
 
 namespace BuildingSystem.Controllers
 {
@@ -153,5 +155,4 @@ namespace BuildingSystem.Controllers
             }
         }
     }
-}
 }
